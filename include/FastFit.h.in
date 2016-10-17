@@ -1,0 +1,164 @@
+/**
+ * Thomas Keck 2016
+ */
+
+#pragma once
+
+#include <Eigen/Dense>
+#include <vector>
+#include <iostream>
+
+#define FastFit_VERSION_MAJOR @FastFit_VERSION_MAJOR@
+#define FastFit_VERSION_MINOR @FastFit_VERSION_MINOR@
+
+class FastFit {
+
+  enum Coordinates {
+    X = 0,
+    Y = 1,
+    Z = 2
+  };
+
+  public:
+    /**
+     * Constructor of a new fit object
+     * Initialize the internal state of the vertex fitter using the kinematic data
+     * of the given particle object
+     * @param mother the particle which decay vertex is fitted
+     */
+    FastFit(unsigned int numberOfDaughters);
+
+    /**
+     * Set kinematic information of i-th daughter particle
+     * @param i the index of the daughter you want to set
+     * @param charge the charge of the particle in units of e
+     * @param momentum the momentum in GeV
+     * @param vertex the POCA of the track or production vertex in cm
+     * @param error the covariance matrix of momentum, energy and vertex
+     */
+    template<class TM, class TV, class TE>
+    void SetDaughter(unsigned int i, int charge, const TM &momentum, const TV &vertex, const TE &error) {
+
+        if(i >= m_numberOfDaughters) {
+          throw std::runtime_error("Invalid index passed to SetDaughter");
+        }
+
+        m_charges[i] = charge;
+        m_momenta[i] << momentum[X], momentum[Y], momentum[Z];
+        m_smoothed_momenta[i] = m_momenta[i];
+        m_positions[i] << vertex[X], vertex[Y], vertex[Z];
+
+        // (x, p) instead of (p, E, x)
+        m_variances[i] << error[4][4], error[4][5], error[4][6], error[4][0], error[4][1], error[4][2],
+                    error[5][4], error[5][5], error[5][6], error[5][0], error[5][1], error[5][2],
+                    error[6][4], error[6][5], error[6][6], error[6][0], error[6][1], error[6][2],
+                    error[0][4], error[0][5], error[0][6], error[0][0], error[0][1], error[0][2],
+                    error[1][4], error[1][5], error[1][6], error[1][0], error[1][1], error[1][2],
+                    error[2][4], error[2][5], error[2][6], error[2][0], error[2][1], error[2][2];
+    }
+
+    /**
+     * Fit the vertex using the internally stored kinematic data
+     * @param maximumNumberOfFitIterations the maximum number of kalman fit iterations
+     * @param magnetic_field the magnetic field to use in tesla
+     */
+    bool fit(unsigned int maximumNumberOfFitIterations = 3, double magnetic_field = 1.5);
+
+    /**
+     * Get Chi2 of last vertex fit
+     */
+    inline double getChi2() const { return m_chi2; }
+
+    /**
+     * Get number of degrees of freedom of the last vertex fit
+     */
+    inline double getNDF() const { return m_ndf; }
+
+    /**
+     * Get momentum information of i-th daughter particle
+     * @param i the index of the daughter
+     * @param component X = 0, Y = 1, Z = 2
+     */
+    double GetDaughterMomentum(unsigned int i, unsigned int component) const;
+    
+    /**
+     * Get daughter variance
+     * @param i the index of the daughter
+     * @param component_i i index of 6x6 (x, p) covariance matrix
+     * @param component_j j index of 6x6 (x, p) covariance matrix
+     */
+    double GetDaughterVariance(unsigned int i, unsigned int component_i, unsigned int component_j) const;
+    
+    /**
+     * Get fitted vertex
+     * @param component X = 0, Y = 1, Z = 2
+     */
+    double GetVertex(unsigned int component) const;
+    
+  private:
+    /**
+     * Return kappa constant.
+     * Kappa as defined in Data Analysis Techniques for High Energy Physics p. 258,
+     * but divided by 100 to convert from m to cm.
+     *
+     * It is the same number that KFit uses as well (see KFitConst.h)
+     *
+     * It depends on the units we are using:
+     * Magnetic field in T
+     * Distances in cm
+     * Momenta in GeV/c
+     * Charges in C/e
+     */
+    inline double getKappa() const { return -0.00299792458; }
+
+
+    /**
+     * Invert matrix and check if it suceeded
+     * @param input matrix to invert
+     * @param output matrix containing the inverted matrix
+     */
+    template<class T>
+    bool invertAndCheck(T& input, T& output)
+    {
+
+      output = input.inverse();
+
+      const double epsilon = 1e-2;
+
+      if (not(input * output).isIdentity(epsilon)) {
+        std::cerr << "Inversion of a matrix in FastFit failed." << std::endl;
+        return false;
+      }
+      return true;
+
+    }
+
+
+  private:
+    unsigned int m_ndf; /**< Number of degrees of freedom of the fit */
+    double m_chi2; /**< Chi2 value of the fit */
+
+    Eigen::Matrix<double, 3, 1> m_vertex; /**< Vertex position vector */
+    Eigen::Matrix<double, 3, 3> m_C; /**< Vertex covariance matrix */
+    Eigen::Matrix<double, 3, 3> m_C_inv; /**< Inverted vertex covariance matrix */
+
+    unsigned int m_numberOfDaughters; /**< Number of daughters */
+
+    std::vector<int> m_charges; /**< Vector containing the charges in multiples of e of the daughter particles */
+    std::vector<Eigen::Matrix<double, 3, 1>> m_momenta; /**< Vector containing momenta of the daughter particles */
+    std::vector<Eigen::Matrix<double, 3, 1>> m_smoothed_momenta; /**< Vector containing smoothed momenta of the daughter particles */
+    std::vector<Eigen::Matrix<double, 3, 1>> m_positions; /**< Vector containing positions of the daughter particles */
+    std::vector<Eigen::Matrix<double, 6, 6>> m_variances; /**< Vector containing variance matrices of the daughter particles */
+
+    std::vector<Eigen::Matrix<double, 5, 5>> m_G; /**< Inverse covariance of measurement with 5 parameters */
+    std::vector<Eigen::Matrix<double, 5, 5>> m_GB; /**< G Matrix modified with B Matrix term */
+
+    std::vector<Eigen::Matrix<double, 5, 3>> m_A; /**< Position matrix of linearisation */
+    std::vector<Eigen::Matrix<double, 5, 3>> m_B; /**< Momentum matrix of linearisation */
+    std::vector<Eigen::Matrix<double, 5, 1>> m_c; /**< Constant term of linearisation */
+
+    std::vector<Eigen::Matrix<double, 3, 3>> m_S; /**< S Matrix similar to the Hut Matrix */
+    std::vector<Eigen::Matrix<double, 5, 1>> m_measurement; /**< Measurement state vector with 5 parameters */
+
+};
+
