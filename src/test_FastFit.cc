@@ -17,6 +17,32 @@ protected:
   }
 };
 
+
+TEST_F(FastFitTest, HelixWithoutMagneticField) {
+
+    // See HelixParametrisation.ipynb for an independent calculation of the parameters using sympy
+    Eigen::Matrix<double, 3, 1> x;
+    x << 3.0, 2.0, 1.0;  
+    Eigen::Matrix<double, 3, 1> p;
+    p << 1.0, 2.0, 3.0;  
+
+    // We move the x position each iteration along the momentum direction
+    // to test if the parametrisation is stable
+    for(unsigned int i = 0; i < 10; ++i) {
+
+        Helix helix(0.0, x, p);
+        auto m = helix.GetParametrisation();
+        EXPECT_NEAR(m(0),  1.34164, 0.001);
+        EXPECT_NEAR(m(1),  0.44721, 0.001);
+        EXPECT_NEAR(m(2), -1.10557, 0.001);
+        EXPECT_NEAR(m(3),  1.10714, 0.001);
+        EXPECT_NEAR(m(4), -3.20000, 0.001);
+        
+        x += p;
+    }
+
+}
+
 std::vector<std::vector<double>> createDiagonalErrorMatrix() {
   
   std::vector<std::vector<double>> error;

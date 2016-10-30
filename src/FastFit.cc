@@ -5,54 +5,78 @@
 #include <FastFit.h>
 
 
-Helix::Helix(double magnetic_field, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p) {
+Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p) {
   
- /**
-  * Kappa as defined in Data Analysis Techniques for High Energy Physics p. 258,
-  * but divided by 100 to convert from m to cm.
-  *
-  * It is the same number that KFit uses as well (see KFitConst.h)
-  *
-  * It depends on the units we are using:
-  * Magnetic field in T
-  * Distances in cm
-  * Momenta in GeV/c
-  * Charges in C/e
-  */
-  const double kappa = -0.00299792458; 
-  const double alpha = magnetic_field * kappa * charge;
-
+  // Transverse momentum squared
+  const double T = p(X)*p(X) + p(Y)*p(Y);
+  
   // Working with the inverse transverse momentum should be safe,
   // because tracks with a transverse momentum of 0 shouldn't be in
   // the detector acceptance!
-  const double ptinv = 1.0 / std::sqrt(p(X)*p(X) + p(Y)*p(Y));
-  if (not std::isfinite(ptinv)) {
+  if (T <= 0) {
     std::cerr << "Invalid inverse transverse momentum. This should happen." << std::endl;
-    return false;
+    return;
   }
 
-  m_dP = (-x(X) * p(X) - x(Y) * p(Y)) * ptinv;
-  m_dO = (-x(Y) * p(X) + x(X) * p(Y)) * ptinv;
-  m_dR = std::sqrt(x(X)*x(X) + x(Y)*x(Y));
-  m_area = 2 * m_dO + alpha  * m_ptinv * m_dR * m_dR;
-  m_denom 1 + std::sqrt(1 + alpha * ptinv * m_area);
+  // Transverse distance to origin squared
+  const double V = x(X)*x(X) + x(Y)*x(Y);
+  // Orthogonal projection of x and p
+  const double P = p(X) * x(Y) - p(Y) * x(X);
+  // Discriminant
+  const double D = std::sqrt(T + alpha * (2 * P + alpha * V));
 
-  m_chi = 0;
-  m_arcLength = m_dP;
-  
+  // 0. Inverse transverse momentum
+  m_parametrisation(0) = 1.0 / std::sqrt(T);
+
+  // 1. Slope angle between p_z and p_t
+  m_parametrisation(1) = p(Z) / std::sqrt(T);
+
+  // 2. Direction angle between p_t and x-axis
+  m_parametrisation(2) = std::atan2(p(Y) - x(X) * alpha, p(X) + x(Y) * alpha);
+
+  // 3. 2d Distance of the perigee to the origin in the x-y plane
+  m_parametrisation(3) = (2 * P + alpha * V) / (T + D);
+
+  // 4. vertical distance of perigee to the x-y plane
+  double chi = 0;
   if (alpha != 0) {
-      m_chi = - std::atan2(alpha * ptinv * m_dP, 1 + alpha * ptinv * m_dO);
-      m_arcLength = - m_chi / (alpha * ptinv);
-  } 
+      chi = std::atan2(alpha *(p(X) * x(X) + p(Y) * x(Y)), T + alpha * P) / alpha;
+  } else {
+      chi = (p(X) * x(X) + p(Y) * x(Y)) / T;
+  }
+  m_parametrisation(4) = x(Z) - p(Z) * chi;
+    
+  
+  // Some temporary constants to keep the complicated Jacobian clean
+  const double a1 = (2 * D * (D + T) - alpha * (2 * P + alpha * V)) / (D * (D + T) * (D + T));
+  const double a2 = alpha / ((alpha * x(X) - p(Y)) * (alpha * x(X) - p(Y)) + (alpha * x(Y) + p(X)) * (alpha * x(Y) + p(X)));
+  const double a3 = p(Z) / (2 * P * alpha + T + V * alpha * alpha);
+  m_A <<
+        0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0,
+        (alpha * x(X) - p(Y)) * a1, (alpha * x(Y) + p(X)) * a1, 0.0,
+       -(alpha * x(Y) + p(X)) * a2, (alpha * x(X) - p(Y)) * a2, 0.0,
+       -(alpha * x(Y) + p(X)) * a3, (alpha * x(X) - p(Y)) * a3, 1.0;
+  
+  const double b1 = 1 / (T * std::sqrt(T));
+  const double b2 = 1.0 / ((alpha * x(X) - p(Y)) * (alpha * x(X) - p(Y)) + (alpha * x(Y) + p(X)) * (alpha * x(Y) + p(X)));
+  const double b3 = p(Z) / (alpha * alpha * ( p(X) * x(X) + p(Y) * x(Y) ) * ( p(X) * x(X) + p(Y) * x(Y) ) + (P * alpha + T) * (P * alpha + T));
+  const double b4 = 1.0 / (D * (D + T) * (D + T));
+  m_B <<
+       -p(X) * b1, -p(Y) * b1, 0.0,
+       -p(X) * p(Z) * b1, -p(Y) * p(Z) * b1, 1.0 / std::sqrt(T),
+        (alpha * x(X) - p(Y)) * b2, (alpha * x(Y) + p(X)) * b2, 0.0
+       -(x(X)*(P * alpha + T) - (alpha * x(Y) + 2 * p(X)) * (p(X) * x(X) + p(Y) * x(Y))) * b3,
+       -(x(Y)*(P * alpha + T) + (alpha * x(X) - 2 * p(Y)) * (p(X) * x(X) + p(Y) * x(Y))) * b3,
+       -chi,
+        (2 * D * x(Y) * (D + T) - (2 * P + V * alpha) * (2 * D * p(X) + alpha * x(Y) + p(X))) * b4,
+       -(2 * D * x(X) * (D + T) + (2 * P + V * alpha) * (2 * D * p(Y) - alpha * x(X) + p(Y))) * b4,
+       0.0;
 
-  m_parametrisation(PtInverse) = ptinv;
-  m_parametrisation(TanLambda) = p(Z) * ptinv;
-  m_parametrisation(PhiAngle0) = std::atan2(p(Y), p(X)) + m_chi;
-  m_parametrisation(Vertical0) = x(Z) + m_parametrisation(TanLambda) * m_arcLength;
-  m_parametrisation(Distance0) = m_area / m_denom;
+  m_c0 = m_parametrisation - m_A * x - m_B * p; 
 
 }
-
+    
 
 FastFit::FastFit(unsigned int numberOfDaughters) {
 
@@ -81,6 +105,21 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
   Eigen::Matrix<double, 5, 6> J;
   Eigen::Matrix<double, 5, 5> G_inv;
   Eigen::Matrix<double, 3, 3> S_inv;
+ 
+  /**
+   * Kappa as defined in Data Analysis Techniques for High Energy Physics p. 258,
+   * but divided by 100 to convert from m to cm.
+   *
+   * It is the same number that KFit uses as well (see KFitConst.h)
+   *
+   * It depends on the units we are using:
+   * Magnetic field in T
+   * Distances in cm
+   * Momenta in GeV/c
+   * Charges in C/e
+   */
+   const double kappa = -0.00299792458; 
+
 
   unsigned int iteration;
   for (iteration = 0; iteration < maximumNumberOfFitIterations; ++iteration) {
@@ -115,27 +154,16 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
       auto& S = m_S[i];
       auto& measurement = m_measurement[i];
 
-      Helix helix(magnetic_field, x, p);
-
-      measurement << helix.get_parametrisation();
-
-      A << 1, 0, - p_s(X) / p_s(Z),
-      0, 1, - p_s(Y) / p_s(Z),
-      0, 0, alpha* p_s(Y) / p_s(Z),
-      0, 0, - alpha* p_s(X) / p_s(Z),
-      0, 0, 0;
-
-      B << 0, 0, 0,
-      0, 0, 0,
-      1, 0, 0,
-      0, 1, 0,
-      0, 0, 1;
-
-      c << reference_z* p_s(X) / p_s(Z),
-      reference_z* p_s(Y) / p_s(Z),
-      - alpha* reference_z* p_s(Y) / p_s(Z),
-      alpha* reference_z* p_s(X) / p_s(Z),
-      0;
+      const double alpha = magnetic_field * charge * kappa;
+      // TODO Measurement can be calculated outside this loop.
+      // It does not change between iterations!
+      Helix helix_perigee(alpha, x, p);
+      measurement << helix_perigee.GetParametrisation();
+      
+      Helix helix_vertex(alpha, current_vertex, p_s);
+      A = helix_vertex.GetVertexJacobian();
+      B = helix_vertex.GetMomentumJacobian();
+      c = helix_vertex.GetConstantOffset();
 
       J.block<5, 3>(0, 0) = A;
       J.block<5, 3>(0, 3) = B;

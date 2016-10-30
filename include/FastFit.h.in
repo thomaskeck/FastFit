@@ -10,19 +10,13 @@
 
 #define FastFit_VERSION_MAJOR @FastFit_VERSION_MAJOR@
 #define FastFit_VERSION_MINOR @FastFit_VERSION_MINOR@
+
+
 class Helix {
   enum Coordinates {
     X = 0,
     Y = 1,
     Z = 2
-  };
-
-  enum HelixParameters {
-      TanLambda = 0,
-      PtInverse = 1,
-      Distance0 = 2,
-      PhiAngle0 = 3,
-      Vertical0 = 4,
   };
 
   public:
@@ -31,26 +25,56 @@ class Helix {
      * This parametrisation is independent of the position of the particle on the helix, hence different x
      * with the corresponding p in the same magnetic field yield the same parametrisation.
      */
-    Helix::Helix(double magnetic_field, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p);
+    Helix(double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p);
 
     /**
      * Return 5 dimensional helix parametrisation
      */
-    inline Eigen::Matrix<double, 5, 1> get_parametrisation() const { return m_parametrisation; };
+    inline Eigen::Matrix<double, 5, 1> GetParametrisation() const { return m_parametrisation; }
+  
+    /**
+     * Return Jacobian for Vertex Coordinates
+     */
+    inline Eigen::Matrix<double, 5, 3> GetVertexJacobian() const { return m_A; }
+    
+    /**
+     * Return Jacobian for Momentum Coordindates
+     */
+    inline Eigen::Matrix<double, 5, 3> GetMomentumJacobian() const { return m_B; }
+    
+    /**
+     * Return Constant offset of linear expansion
+     */
+    inline Eigen::Matrix<double, 5, 1> GetConstantOffset() const { return m_c0; }
+
+    /**
+     * Return position at perigee
+     */
+    inline Eigen::Matrix<double, 3, 1> GetPositionAtPerigee() const {
+        Eigen::Matrix<double, 3, 1> x_perigee;
+        x_perigee << m_parametrisation(3) * std::sin(m_parametrisation(2)),
+                    -m_parametrisation(3) * std::cos(m_parametrisation(2)),
+                     m_parametrisation(4);
+        return x_perigee;
+    }
+    
+    /**
+     * Return momentum at perigee
+     */
+    inline Eigen::Matrix<double, 3, 1> GetMomentumAtPerigee() const {
+        Eigen::Matrix<double, 3, 1> p_perigee;
+        p_perigee << std::cos(m_parametrisation(2)) / m_parametrisation(0),
+                     std::sin(m_parametrisation(2)) / m_parametrisation(0),
+                     m_parametrisation(1) / m_parametrisation(0);
+        return p_perigee;
+    }
+
 
   private:
     Eigen::Matrix<double, 5, 1> m_parametrisation; /**< 5 dimensional Helix parametrisation */
-
-    /** 
-     * Additional helper quantities for faster calculation
-     */
-    double m_dP;
-    double m_dO;
-    double m_dR;
-    double m_chi;
-    double m_denom;
-    double m_area;
-    double m_arcLength; 
+    Eigen::Matrix<double, 5, 3> m_A; /**< Jacobi matrix for vertex coordinates */
+    Eigen::Matrix<double, 5, 3> m_B; /**< Jacobi matrix for momentum coordinates */
+    Eigen::Matrix<double, 5, 1> m_c0; /**< Constant offset of linear expansion */
 
 
 };
