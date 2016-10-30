@@ -10,5 +10,5 @@ The Belle and Belle II experiment employ the following vertex fitter implementat
 
 # Further Reading
 This work is based on
-   * http://web-docs.gsi.de/~ikisel/reco/Methods/Billoir_VertexFitting_NIM_A311_1992.pdf
+   * http://web-docs.gsi.de/~ikisel/reco/Methods/Billoir_VertexFitting_NIM_A311_1992.pdf (See also Erratum from 1994. There was a sign error.)
    * http://web-docs.gsi.de/~ikisel/reco/Methods/Fruehwirth-Kalman-NIMA262-1987.pdf
