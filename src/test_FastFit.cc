@@ -150,8 +150,14 @@ std::vector<std::vector<double>> createDiagonalErrorMatrix() {
   std::vector<std::vector<double>> error;
   for(unsigned int i = 0; i < 7; ++i) {
     std::vector<double> temp(7);
-    for(unsigned int j = 0; j < 7; ++j)
-      temp[j] = (i == j) ? 0.01 : 0.0;
+    for(unsigned int j = 0; j < 7; ++j) {
+      if (i <= 3) {
+        // Multiply variance with a constant to give momenta and position the "same" accuracy
+        temp[j] = (i == j) ? 0.09 : 0.0;
+      } else {
+        temp[j] = (i == j) ? 0.1 : 0.0;
+      }
+    }
     error.push_back(temp);
   }
 
@@ -161,7 +167,6 @@ std::vector<std::vector<double>> createDiagonalErrorMatrix() {
 
 TEST_F(FastFitTest, TestNeutralParticles)
 {
-  return;
   FastFit fitter(2);
 
   fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
@@ -228,7 +233,7 @@ TEST_F(FastFitTest, TestNeutralParticles)
   EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.01);
 
   // Now what happens if the momenta do not match?
-  // In the following case y momentum should to -0.1 and 0.1
+  // In the following case y momentum should be -0.1 and 0.1
   // In this case the momenta of the daughter particles have to be corrected
   
   fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0,  0.1, 0.0}, createDiagonalErrorMatrix());
