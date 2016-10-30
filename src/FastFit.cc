@@ -45,8 +45,7 @@ Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eig
       chi = (p(X) * x(X) + p(Y) * x(Y)) / T;
   }
   m_parametrisation(4) = x(Z) - p(Z) * chi;
-    
-  
+
   // Some temporary constants to keep the complicated Jacobian clean
   const double a1 = (2 * D * (D + T) - alpha * (2 * P + alpha * V)) / (D * (D + T) * (D + T));
   const double a2 = alpha / ((alpha * x(X) - p(Y)) * (alpha * x(X) - p(Y)) + (alpha * x(Y) + p(X)) * (alpha * x(Y) + p(X)));
@@ -54,10 +53,10 @@ Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eig
   m_A <<
         0.0, 0.0, 0.0,
         0.0, 0.0, 0.0,
-        (alpha * x(X) - p(Y)) * a1, (alpha * x(Y) + p(X)) * a1, 0.0,
        -(alpha * x(Y) + p(X)) * a2, (alpha * x(X) - p(Y)) * a2, 0.0,
+        (alpha * x(X) - p(Y)) * a1, (alpha * x(Y) + p(X)) * a1, 0.0,
        -(alpha * x(Y) + p(X)) * a3, (alpha * x(X) - p(Y)) * a3, 1.0;
-  
+
   const double b1 = 1 / (T * std::sqrt(T));
   const double b2 = 1.0 / ((alpha * x(X) - p(Y)) * (alpha * x(X) - p(Y)) + (alpha * x(Y) + p(X)) * (alpha * x(Y) + p(X)));
   const double b3 = p(Z) / (alpha * alpha * ( p(X) * x(X) + p(Y) * x(Y) ) * ( p(X) * x(X) + p(Y) * x(Y) ) + (P * alpha + T) * (P * alpha + T));
@@ -65,13 +64,13 @@ Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eig
   m_B <<
        -p(X) * b1, -p(Y) * b1, 0.0,
        -p(X) * p(Z) * b1, -p(Y) * p(Z) * b1, 1.0 / std::sqrt(T),
-        (alpha * x(X) - p(Y)) * b2, (alpha * x(Y) + p(X)) * b2, 0.0
-       -(x(X)*(P * alpha + T) - (alpha * x(Y) + 2 * p(X)) * (p(X) * x(X) + p(Y) * x(Y))) * b3,
-       -(x(Y)*(P * alpha + T) + (alpha * x(X) - 2 * p(Y)) * (p(X) * x(X) + p(Y) * x(Y))) * b3,
-       -chi,
+        (alpha * x(X) - p(Y)) * b2, (alpha * x(Y) + p(X)) * b2, 0.0,
         (2 * D * x(Y) * (D + T) - (2 * P + V * alpha) * (2 * D * p(X) + alpha * x(Y) + p(X))) * b4,
        -(2 * D * x(X) * (D + T) + (2 * P + V * alpha) * (2 * D * p(Y) - alpha * x(X) + p(Y))) * b4,
-       0.0;
+       0.0,
+       -(x(X)*(P * alpha + T) - (alpha * x(Y) + 2 * p(X)) * (p(X) * x(X) + p(Y) * x(Y))) * b3,
+       -(x(Y)*(P * alpha + T) + (alpha * x(X) - 2 * p(Y)) * (p(X) * x(X) + p(Y) * x(Y))) * b3,
+       -chi;
 
   m_c0 = m_parametrisation - m_A * x - m_B * p; 
 
