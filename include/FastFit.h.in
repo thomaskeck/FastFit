@@ -10,6 +10,50 @@
 
 #define FastFit_VERSION_MAJOR @FastFit_VERSION_MAJOR@
 #define FastFit_VERSION_MINOR @FastFit_VERSION_MINOR@
+class Helix {
+  enum Coordinates {
+    X = 0,
+    Y = 1,
+    Z = 2
+  };
+
+  enum HelixParameters {
+      TanLambda = 0,
+      PtInverse = 1,
+      Distance0 = 2,
+      PhiAngle0 = 3,
+      Vertical0 = 4,
+  };
+
+  public:
+    /**
+     * Create a helix parametrisation in a magnetic field for a particle with a momentum p at a position x.
+     * This parametrisation is independent of the position of the particle on the helix, hence different x
+     * with the corresponding p in the same magnetic field yield the same parametrisation.
+     */
+    Helix::Helix(double magnetic_field, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p);
+
+    /**
+     * Return 5 dimensional helix parametrisation
+     */
+    inline Eigen::Matrix<double, 5, 1> get_parametrisation() const { return m_parametrisation; };
+
+  private:
+    Eigen::Matrix<double, 5, 1> m_parametrisation; /**< 5 dimensional Helix parametrisation */
+
+    /** 
+     * Additional helper quantities for faster calculation
+     */
+    double m_dP;
+    double m_dO;
+    double m_dR;
+    double m_chi;
+    double m_denom;
+    double m_area;
+    double m_arcLength; 
+
+
+};
 
 class FastFit {
 
@@ -96,22 +140,6 @@ class FastFit {
     double GetVertex(unsigned int component) const;
     
   private:
-    /**
-     * Return kappa constant.
-     * Kappa as defined in Data Analysis Techniques for High Energy Physics p. 258,
-     * but divided by 100 to convert from m to cm.
-     *
-     * It is the same number that KFit uses as well (see KFitConst.h)
-     *
-     * It depends on the units we are using:
-     * Magnetic field in T
-     * Distances in cm
-     * Momenta in GeV/c
-     * Charges in C/e
-     */
-    inline double getKappa() const { return -0.00299792458; }
-
-
     /**
      * Invert matrix and check if it suceeded
      * @param input matrix to invert

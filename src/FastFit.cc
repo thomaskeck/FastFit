@@ -5,6 +5,55 @@
 #include <FastFit.h>
 
 
+Helix::Helix(double magnetic_field, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p) {
+  
+ /**
+  * Kappa as defined in Data Analysis Techniques for High Energy Physics p. 258,
+  * but divided by 100 to convert from m to cm.
+  *
+  * It is the same number that KFit uses as well (see KFitConst.h)
+  *
+  * It depends on the units we are using:
+  * Magnetic field in T
+  * Distances in cm
+  * Momenta in GeV/c
+  * Charges in C/e
+  */
+  const double kappa = -0.00299792458; 
+  const double alpha = magnetic_field * kappa * charge;
+
+  // Working with the inverse transverse momentum should be safe,
+  // because tracks with a transverse momentum of 0 shouldn't be in
+  // the detector acceptance!
+  const double ptinv = 1.0 / std::sqrt(p(X)*p(X) + p(Y)*p(Y));
+  if (not std::isfinite(ptinv)) {
+    std::cerr << "Invalid inverse transverse momentum. This should happen." << std::endl;
+    return false;
+  }
+
+  m_dP = (-x(X) * p(X) - x(Y) * p(Y)) * ptinv;
+  m_dO = (-x(Y) * p(X) + x(X) * p(Y)) * ptinv;
+  m_dR = std::sqrt(x(X)*x(X) + x(Y)*x(Y));
+  m_area = 2 * m_dO + alpha  * m_ptinv * m_dR * m_dR;
+  m_denom 1 + std::sqrt(1 + alpha * ptinv * m_area);
+
+  m_chi = 0;
+  m_arcLength = m_dP;
+  
+  if (alpha != 0) {
+      m_chi = - std::atan2(alpha * ptinv * m_dP, 1 + alpha * ptinv * m_dO);
+      m_arcLength = - m_chi / (alpha * ptinv);
+  } 
+
+  m_parametrisation(PtInverse) = ptinv;
+  m_parametrisation(TanLambda) = p(Z) * ptinv;
+  m_parametrisation(PhiAngle0) = std::atan2(p(Y), p(X)) + m_chi;
+  m_parametrisation(Vertical0) = x(Z) + m_parametrisation(TanLambda) * m_arcLength;
+  m_parametrisation(Distance0) = m_area / m_denom;
+
+}
+
+
 FastFit::FastFit(unsigned int numberOfDaughters) {
 
   m_numberOfDaughters = numberOfDaughters;
@@ -66,39 +115,9 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
       auto& S = m_S[i];
       auto& measurement = m_measurement[i];
 
+      Helix helix(magnetic_field, x, p);
 
-      const double alpha = magnetic_field * getKappa() * charge;
-
-      double reference_z = 0;
-      if (iteration == 0) {
-        reference_z = x(Z);
-      } else {
-        reference_z = current_vertex(Z);
-      }
-
-      if (alpha != 0) {
-        double phi = alpha * (x(Z) - reference_z) / p(Z);
-        double sinPhi = std::sin(phi);
-        double cosPhi = std::cos(phi);
-
-        measurement << x(X) - (p(X) * sinPhi + p(Y) * (cosPhi - 1)) / alpha,
-                    x(Y) + (p(X) * (cosPhi - 1) - p(Y) * sinPhi) / alpha,
-                    p(X) * cosPhi + p(Y) * sinPhi,
-                    -p(X) * sinPhi + p(Y) * cosPhi,
-                    p(Z);
-
-        // Move to vertex guess in first round
-        if (iteration == 0) {
-          p_s << p_s(X) * cosPhi + p_s(Y) * sinPhi,
-              -p_s(X) * sinPhi + p_s(Y) * cosPhi,
-              p_s(Z);
-        }
-
-      } else {
-        measurement << x(X) - p(X) / p(Z) * (x(Z) - reference_z),
-                    x(Y) - p(Y) / p(Z) * (x(Z) - reference_z),
-                    p(X), p(Y), p(Z);
-      }
+      measurement << helix.get_parametrisation();
 
       A << 1, 0, - p_s(X) / p_s(Z),
       0, 1, - p_s(Y) / p_s(Z),
@@ -202,26 +221,6 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
   }
 
   m_ndf = 2 * m_numberOfDaughters - 3;
-
-  // Move momenta back to original position
-  for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
-
-    auto& p_s = m_smoothed_momenta[i];
-    auto& x = m_positions[i];
-    auto& charge = m_charges[i];
-
-    const double alpha = magnetic_field * getKappa() * charge;
-
-    if (alpha != 0) {
-      double phi = - alpha * (x(Z) - m_vertex(Z)) / p_s(Z);
-      double sinPhi = std::sin(phi);
-      double cosPhi = std::cos(phi);
-
-      p_s << p_s(X) * cosPhi + p_s(Y) * sinPhi,
-          -p_s(X) * sinPhi + p_s(Y) * cosPhi,
-          p_s(Z);
-    }
-  }
 
   return true;
 }
