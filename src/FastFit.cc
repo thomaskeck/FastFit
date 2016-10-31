@@ -158,11 +158,17 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
       // It does not change between iterations!
       Helix helix_perigee(alpha, x, p);
       measurement << helix_perigee.GetParametrisation();
-      
-      Helix helix_vertex(alpha, current_vertex, p_s);
-      A = helix_vertex.GetVertexJacobian();
-      B = helix_vertex.GetMomentumJacobian();
-      c = helix_vertex.GetConstantOffset();
+     
+      if(iteration == 0) {
+        A = helix_perigee.GetVertexJacobian();
+        B = helix_perigee.GetMomentumJacobian();
+        c = helix_perigee.GetConstantOffset();
+      } else {
+        Helix helix_vertex(alpha, current_vertex, p_s);
+        A = helix_vertex.GetVertexJacobian();
+        B = helix_vertex.GetMomentumJacobian();
+        c = helix_vertex.GetConstantOffset();
+      }
 
       J.block<5, 3>(0, 0) = A;
       J.block<5, 3>(0, 3) = B;
