@@ -5,6 +5,10 @@
 #include <gtest/gtest.h>
 #include <FastFit.h>
 
+#include <iostream> 
+#include <iomanip> 
+
+
 /** Test fixture. */
 class FastFitTest : public ::testing::Test {
 protected:
@@ -145,7 +149,7 @@ TEST_F(FastFitTest, HelixWithMagneticField) {
     }
 }
 
-std::vector<std::vector<double>> createDiagonalErrorMatrix() {
+std::vector<std::vector<double>> createDiagonalErrorMatrix(double position_variance = 0.01, double momentum_variance = 0.01) {
   
   std::vector<std::vector<double>> error;
   for(unsigned int i = 0; i < 7; ++i) {
@@ -153,9 +157,9 @@ std::vector<std::vector<double>> createDiagonalErrorMatrix() {
     for(unsigned int j = 0; j < 7; ++j) {
       if (i <= 3) {
         // Multiply variance with a constant to give momenta and position the "same" accuracy
-        temp[j] = (i == j) ? 0.09 : 0.0;
+        temp[j] = (i == j) ? momentum_variance : 0.0;
       } else {
-        temp[j] = (i == j) ? 0.1 : 0.0;
+        temp[j] = (i == j) ? position_variance : 0.0;
       }
     }
     error.push_back(temp);
@@ -236,9 +240,29 @@ TEST_F(FastFitTest, TestNeutralParticles)
   // In the following case y momentum should be -0.1 and 0.1
   // In this case the momenta of the daughter particles have to be corrected
   
-  fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0,  0.1, 0.0}, createDiagonalErrorMatrix());
-  fitter.SetDaughter(1, 0, std::vector<double>{ 1.0, 0.0, 1.0}, std::vector<double>{-1.0, -0.1, 0.0}, createDiagonalErrorMatrix());
+  for(unsigned int i = 0; i < 10; ++i)
+  std::cout << "**************************************************" << std::endl;
+
+  fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0,  0.0, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
+  fitter.SetDaughter(1, 0, std::vector<double>{ 1.0, 0.0, 1.0}, std::vector<double>{-1.0,  0.0, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
   fitter.fit(3, 1.5);
+  //std::cout << std::setprecision(3) << std::fixed;
+  std::cout << fitter.GetVertex(0) << " " << fitter.GetVertex(1) << " " << fitter.GetVertex(2) << "       ";
+  std::cout << fitter.GetDaughterMomentum(0, 0) << " " << fitter.GetDaughterMomentum(0, 1) << " " << fitter.GetDaughterMomentum(0, 2) << "      ";
+  std::cout << fitter.GetDaughterMomentum(1, 0) << " " << fitter.GetDaughterMomentum(1, 1) << " " << fitter.GetDaughterMomentum(1, 2) << "      ";
+  std::cout << std::endl;
+
+  for(unsigned int i = 0; i < 10; ++i)
+  std::cout << "##################################################" << std::endl;
+
+  fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0,  0.1, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
+  fitter.SetDaughter(1, 0, std::vector<double>{ 1.0, 0.0, 1.0}, std::vector<double>{-1.0, -0.1, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
+  fitter.fit(3, 1.5);
+  //std::cout << std::setprecision(3) << std::fixed;
+  std::cout << fitter.GetVertex(0) << " " << fitter.GetVertex(1) << " " << fitter.GetVertex(2) << "       ";
+  std::cout << fitter.GetDaughterMomentum(0, 0) << " " << fitter.GetDaughterMomentum(0, 1) << " " << fitter.GetDaughterMomentum(0, 2) << "      ";
+  std::cout << fitter.GetDaughterMomentum(1, 0) << " " << fitter.GetDaughterMomentum(1, 1) << " " << fitter.GetDaughterMomentum(1, 2) << "      ";
+  std::cout << std::endl;
 
   EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.01);
   EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.01);

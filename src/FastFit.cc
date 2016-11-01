@@ -3,7 +3,7 @@
  */
 
 #include <FastFit.h>
-
+#include <cmath>
 
 Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p) {
   
@@ -75,7 +75,17 @@ Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eig
   m_c0 = m_parametrisation - m_A * x - m_B * p; 
 
 }
-    
+
+/**
+ * Centers the angle of the 5d - parametrisation around the given center.
+ * This means we use the 2*pi periodicy of p(2) to ensure that max(|p(2) - center|) <= pi
+ */
+Eigen::Matrix<double, 5, 1> centerAngle(Eigen::Matrix<double, 5, 1> p, double center) {
+
+    p(2) = std::fmod(p(2) - center + M_PI, (2 * M_PI)) + center - M_PI;
+    return p;
+
+}
 
 FastFit::FastFit(unsigned int numberOfDaughters) {
 
@@ -191,7 +201,7 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
 
       GB = G - G * B * S * B.transpose() * G; // G is symmetric, doesn't need to be transposed
 
-      m_vertex += A.transpose() * GB * (measurement - c);
+      m_vertex += A.transpose() * GB * centerAngle(measurement - c, measurement(2));
       m_C_inv += A.transpose() * GB * A;
     }
 
@@ -216,8 +226,15 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
       auto& measurement = m_measurement[i];
 
       // New smoothed momentum at the final vertex position
-      p_s = S * B.transpose() * G * (measurement - c - A * m_vertex);
-
+      p_s = S * B.transpose() * G * centerAngle(measurement - c - A * m_vertex, measurement(2));
+      std::cout << "Smooth momenta of daughter " << i << std::endl;
+      std::cout << "Momentum before " << std::endl << m_momenta[i] << std::endl; 
+      std::cout << "Estimated B * momentum " << std::endl << centerAngle(measurement - c - A * m_vertex, measurement(2)) << std::endl; 
+      std::cout << "G " << std::endl << G << std::endl; 
+      std::cout << "S " << std::endl << S << std::endl; 
+      std::cout << "B " << std::endl << B << std::endl; 
+      std::cout << "S * B.T * G " << std::endl << (S * B.transpose() * G) << std::endl; 
+      std::cout << "Momentum after " << std::endl << p_s << std::endl; 
     }
   }
 
@@ -242,13 +259,13 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
     auto& measurement = m_measurement[i];
 
     E = - m_C * A.transpose() * G * B * S;
-    // TODO m_C has to be retransformed to the original X variance position!
+    // TODO Does m_C has to be retransformed to the original X variance position?
     V.block<3, 3>(0, 0) = m_C;
     V.block<3, 3>(3, 3) = S + E.transpose() * m_C_inv * E;
     V.block<3, 3>(3, 0) = E;
     V.block<3, 3>(0, 3) = E;
 
-    r = measurement - c - A * m_vertex - B * p_s;
+    r = centerAngle(measurement - c - A * m_vertex - B * p_s, measurement(2));
     m_chi2 += (r.transpose() * G * r)(0, 0);
 
   }
