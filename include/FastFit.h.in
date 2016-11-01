@@ -163,6 +163,13 @@ class FastFit {
      */
     double GetVertex(unsigned int component) const;
     
+    /**
+     * Get variance
+     * @param component_i i index of 6x6 (x, p) covariance matrix
+     * @param component_j j index of 6x6 (x, p) covariance matrix
+     */
+    double GetVariance(unsigned int component_i, unsigned int component_j) const;
+    
   private:
     /**
      * Invert matrix and check if it suceeded

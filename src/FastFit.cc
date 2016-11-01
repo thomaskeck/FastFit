@@ -281,6 +281,19 @@ double FastFit::GetDaughterVariance(unsigned int i, unsigned int component_i, un
     const auto &V = m_variances[i];
     return V(component_i, component_j);
 }
+
+double FastFit::GetVariance(unsigned int component_i, unsigned int component_j) const {
+    if(component_i >= 6) {
+      throw std::runtime_error("Invalid index passed to GetDaughterMomentum");
+    }
+    if(component_j >= 6) {
+      throw std::runtime_error("Invalid index passed to GetDaughterMomentum");
+    }
+    // TODO At the moment we just return the covariance of the first daughter
+    // Calculate the correct covariance matrix
+    const auto &V = m_variances[0];
+    return V(component_i, component_j);
+}
     
 
 double FastFit::GetDaughterMomentum(unsigned int i, unsigned int component) const {
