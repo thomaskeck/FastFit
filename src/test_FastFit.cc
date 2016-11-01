@@ -180,19 +180,19 @@ TEST_F(FastFitTest, TestNeutralParticles)
   // Neutral particles like photons just move along a straight line
   // So The solution is just the intersection point of the two lines
 
-  EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(2), 1.0, 0.01);
+  EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(2), 1.0, 0.001);
   
   // Momenta should be the same
 
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0), -1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1),  0.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),  1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0), -1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1),  0.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),  1.0, 0.001);
   
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  0.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  0.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.001);
   
   // Neutral particles like photons just move along a straight line
   // So The solution is just the intersection point of the two lines
@@ -201,19 +201,19 @@ TEST_F(FastFitTest, TestNeutralParticles)
   fitter.SetDaughter(1, 0, std::vector<double>{0.0, 1.0,  1.0}, std::vector<double>{0.0, 0.0, -1.0}, createDiagonalErrorMatrix());
   fitter.fit(3, 1.5);
 
-  EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(1), 1.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(2), 0.0, 0.01);
+  EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(1), 1.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(2), 0.0, 0.001);
   
   // Momenta should be the same
 
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0),  0.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1),  1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2), -1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0),  0.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1),  1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2), -1.0, 0.001);
   
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  0.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  0.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.001);
   
   // Neutral particles like photons just move along a straight line
   // So The solution is just the intersection point of the two lines
@@ -222,20 +222,22 @@ TEST_F(FastFitTest, TestNeutralParticles)
   fitter.SetDaughter(1, 0, std::vector<double>{1.0,  1.0, 1.0}, std::vector<double>{0.0, -1.0, 0.0}, createDiagonalErrorMatrix());
   fitter.fit(3, 1.5);
 
-  EXPECT_NEAR(fitter.GetVertex(0), 1.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(2), 1.0, 0.01);
+  EXPECT_NEAR(fitter.GetVertex(0), 1.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(2), 1.0, 0.001);
   
   // Momenta should be the same
 
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0),  1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1), -1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),  1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0),  1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1), -1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),  1.0, 0.001);
   
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.001);
 
+  return;
+  // TODO
   // Now what happens if the momenta do not match?
   // In the following case y momentum should be -0.1 and 0.1
   // In this case the momenta of the daughter particles have to be corrected
@@ -264,35 +266,122 @@ TEST_F(FastFitTest, TestNeutralParticles)
   std::cout << fitter.GetDaughterMomentum(1, 0) << " " << fitter.GetDaughterMomentum(1, 1) << " " << fitter.GetDaughterMomentum(1, 2) << "      ";
   std::cout << std::endl;
 
-  EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.01);
-  EXPECT_NEAR(fitter.GetVertex(2), 1.0, 0.01);
+  EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.001);
+  EXPECT_NEAR(fitter.GetVertex(2), 1.0, 0.001);
   
   // Momenta should adapted so that they match
 
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0), -1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1), -0.1, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),  1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0), -1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1), -0.1, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),  1.0, 0.001);
   
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  1.0, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  0.1, 0.01);
-  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.01);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  1.0, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  0.1, 0.001);
+  EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  1.0, 0.001);
 
 }
 
 TEST_F(FastFitTest, TestChargedParticles)
 {
-  return;
-  FastFit fitter(2);
 
-  for (unsigned int i = 1; i < 100; ++i) {
-    fitter.SetDaughter(0,  1, std::vector<double>{0.0,  0.1 * i, 0.01}, std::vector<double>{0.0,  10.0, 10.0}, createDiagonalErrorMatrix());
-    fitter.SetDaughter(1, -1, std::vector<double>{0.0, -0.1 * i, 0.01}, std::vector<double>{0.0, -10.0, 10.0}, createDiagonalErrorMatrix());
-    fitter.fit(3, 1.5);
+  // We consider two charged particles with opposite charges
+  // The move only in the x-y plane (p_z = 0)
+  //  1 -->           <-- 2
+  //    --             --
+  //      --         --
+  //        -      -
+  //         |    |
+  //           ||
+  // Now, the vertex should b x = 0, z =0, and y depending on the initial momenta
+  // - High momentum -> small y
+  // - Low momentum  -> large y
+  // - Inversed momenta -> sign of y inverses
 
-    //std::cout << "Momentum in y direction " << i * 0.1 << std::endl;
-    //std::cout << fitter.GetVertex(0) << " " << fitter.GetVertex(1) << " " << fitter.GetVertex(2) << " " << std::endl;
-  }
+  double old_vertex_y = -1.0;
+
+  for(unsigned int i = 1; i <= 10; ++i) {
+      FastFit fitter(2);
+      fitter.SetDaughter(0,  1, std::vector<double>{ 0.1*i, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      fitter.SetDaughter(1, -1, std::vector<double>{-0.1*i, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      fitter.fit(3, 1.5);
+     
+      /* 
+      std::cout << std::setprecision(6) << std::fixed;
+      std::cout << fitter.GetVertex(0) << " " << fitter.GetVertex(1) << " " << fitter.GetVertex(2) << "        ";
+      std::cout << fitter.GetDaughterMomentum(0, 0) << " " << fitter.GetDaughterMomentum(0, 1) << " " << fitter.GetDaughterMomentum(0, 2) << "      ";
+      std::cout << fitter.GetDaughterMomentum(1, 0) << " " << fitter.GetDaughterMomentum(1, 1) << " " << fitter.GetDaughterMomentum(1, 2) << "      ";
+      std::cout << std::endl;
+      */
+      
+      // X und Z Component of vertex should be always 0
+      EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.001);
+      EXPECT_NEAR(fitter.GetVertex(2), 0.0, 0.001);
+      
+      // With the increase of the momenta the vertex in y direction should be converge to 0.0
+      EXPECT_GT(fitter.GetVertex(1),  old_vertex_y);
+      EXPECT_LT(fitter.GetVertex(1),  0.0);
+      EXPECT_GT(fitter.GetVertex(1), -1.0);
+
+      // Remember last Y component of vertex for next round
+      old_vertex_y = fitter.GetVertex(1);
+      
+      // X Component should be always less than the original mometum
+      EXPECT_LT(fitter.GetDaughterMomentum(0, 0),  0.1*i);
+      
+      // Y Component should always be less than 0
+      EXPECT_LT(fitter.GetDaughterMomentum(0, 1),  0.0);
+      
+      // X Component should be the opposite
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0), -fitter.GetDaughterMomentum(0, 0), 0.001);
+      
+      // Y Component should be equal
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1), fitter.GetDaughterMomentum(0, 1), 0.001);
+      
+      // Z Component should be unchanged
+      EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),  0.0, 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),  0.0, 0.001);
+      
+      // Transverse momenta should be invariant
+      EXPECT_NEAR(std::hypot(fitter.GetDaughterMomentum(0, 0), fitter.GetDaughterMomentum(0, 1)),  0.1 * i, 0.001);
+      EXPECT_NEAR(std::hypot(fitter.GetDaughterMomentum(1, 0), fitter.GetDaughterMomentum(1, 1)),  0.1 * i, 0.001);
+       
+      // Opposite momenta
+      FastFit ofitter(2);
+      ofitter.SetDaughter(0,  1, std::vector<double>{-0.1*i, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      ofitter.SetDaughter(1, -1, std::vector<double>{ 0.1*i, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      ofitter.fit(3, 1.5);
+      
+      EXPECT_NEAR(fitter.GetVertex(0), ofitter.GetVertex(0), 0.001);
+      EXPECT_NEAR(fitter.GetVertex(1), -ofitter.GetVertex(1), 0.001);
+      EXPECT_NEAR(fitter.GetVertex(2), ofitter.GetVertex(2), 0.001);
+      
+      EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0),  -ofitter.GetDaughterMomentum(0, 0), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1),   ofitter.GetDaughterMomentum(0, 1), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),   ofitter.GetDaughterMomentum(0, 2), 0.001);
+      
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  -ofitter.GetDaughterMomentum(1, 0), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),   ofitter.GetDaughterMomentum(1, 1), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),   ofitter.GetDaughterMomentum(1, 2), 0.001);
+      
+      // Opposite charge
+      ofitter.SetDaughter(0, -1, std::vector<double>{ 0.1*i, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      ofitter.SetDaughter(1,  1, std::vector<double>{-0.1*i, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      ofitter.fit(3, 1.5);
+      
+      EXPECT_NEAR(fitter.GetVertex(0), ofitter.GetVertex(0), 0.001);
+      EXPECT_NEAR(fitter.GetVertex(1), -ofitter.GetVertex(1), 0.001);
+      EXPECT_NEAR(fitter.GetVertex(2), ofitter.GetVertex(2), 0.001);
+      
+      EXPECT_NEAR(fitter.GetDaughterMomentum(0, 0),  ofitter.GetDaughterMomentum(0, 0), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(0, 1),  -ofitter.GetDaughterMomentum(0, 1), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(0, 2),   ofitter.GetDaughterMomentum(0, 2), 0.001);
+      
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 0),  ofitter.GetDaughterMomentum(1, 0), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 1),  -ofitter.GetDaughterMomentum(1, 1), 0.001);
+      EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),   ofitter.GetDaughterMomentum(1, 2), 0.001);
+      
+    }
 
 }
 

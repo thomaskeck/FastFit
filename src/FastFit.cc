@@ -227,14 +227,6 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
 
       // New smoothed momentum at the final vertex position
       p_s = S * B.transpose() * G * centerAngle(measurement - c - A * m_vertex, measurement(2));
-      std::cout << "Smooth momenta of daughter " << i << std::endl;
-      std::cout << "Momentum before " << std::endl << m_momenta[i] << std::endl; 
-      std::cout << "Estimated B * momentum " << std::endl << centerAngle(measurement - c - A * m_vertex, measurement(2)) << std::endl; 
-      std::cout << "G " << std::endl << G << std::endl; 
-      std::cout << "S " << std::endl << S << std::endl; 
-      std::cout << "B " << std::endl << B << std::endl; 
-      std::cout << "S * B.T * G " << std::endl << (S * B.transpose() * G) << std::endl; 
-      std::cout << "Momentum after " << std::endl << p_s << std::endl; 
     }
   }
 
