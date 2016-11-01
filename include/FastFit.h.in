@@ -140,7 +140,7 @@ class FastFit {
     /**
      * Get number of degrees of freedom of the last vertex fit
      */
-    inline double getNDF() const { return m_ndf; }
+    inline unsigned int getNDF() const { return m_ndf; }
 
     /**
      * Get momentum information of i-th daughter particle

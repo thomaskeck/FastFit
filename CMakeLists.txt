@@ -4,8 +4,8 @@ set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
 
 project (FastFit)
-set (FastFit_VERSION_MAJOR 3)
-set (FastFit_VERSION_MINOR 4)
+set (FastFit_VERSION_MAJOR 1)
+set (FastFit_VERSION_MINOR 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
@@ -37,12 +37,21 @@ set(FastFit_HEADERS
   "${PROJECT_BINARY_DIR}/include/FastFit.h"
 )
 
+set(FastFit_CINTERFACE
+    "${PROJECT_SOURCE_DIR}/src/FastFit_C_API.cc"
+    "${PROJECT_SOURCE_DIR}/include/FastFit_C_API.h" 
+)
+
 add_library(FastFit_static STATIC ${FastFit_SOURCES} ${FastFit_HEADERS})
 target_link_libraries(FastFit_static)
+
 add_library(FastFit_shared SHARED ${FastFit_SOURCES} ${FastFit_HEADERS})
 target_link_libraries(FastFit_shared)
 
-install(TARGETS FastFit_static FastFit_shared
+add_library(FastFit_CInterface SHARED ${FastFit_CINTERFACE} ${FastFit_SOURCES} ${FastFit_HEADERS})
+target_link_libraries(FastFit_CInterface)
+
+install(TARGETS FastFit_static FastFit_shared FastFit_CInterface 
      LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib
       RUNTIME DESTINATION bin   
@@ -57,3 +66,35 @@ else()
   message(STATUS "Could not find gtest installation, skip building unittests.")
 endif()
 
+find_program(PYTHON "python3")
+
+if (PYTHON)
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/setup.py.in"
+        "${PROJECT_SOURCE_DIR}/setup.py"
+    )
+
+    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp"
+                       COMMAND ${PYTHON} "${CMAKE_CURRENT_BINARY_DIR}/setup.py" build
+                       COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp"
+                       DEPENDS ${DEPS})
+
+    add_custom_target(target ALL DEPENDS ${OUTPUT})
+
+    install(CODE "execute_process(COMMAND ${PYTHON} ${PROJECT_SOURCE_DIR}/setup.py install --prefix=${CMAKE_INSTALL_PREFIX})")
+endif()
+
+set(CPACK_PACKAGE_VERSION "${FastFit_VERSION_MAJOR}.${FastFit_VERSION_MINOR}")
+set(CPACK_GENERATOR "RPM;DEB;TGZ")
+set(CPACK_PACKAGE_NAME "FastFit")
+set(CPACK_PACKAGE_RELEASE 1)
+set(CPACK_PACKAGE_CONTACT "thomas.keck2@kit.edu")
+set(CPACK_PACKAGE_VENDOR "Private")
+set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+
+SET(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+SET(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+SET(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+
+include(CPack)
