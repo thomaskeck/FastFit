@@ -6,10 +6,10 @@ import numpy as np
 
 if __name__ == '__main__':
 
-    fitter = FastFit.FastFit(2)
+    fitter = FastFit.FastFit(2, 1.5)
     fitter.setDaughter(0,  1, np.array([ 1.0, 0.0, 0.0]), np.array([-1.0, 0.0, 0.0]), np.diag([0.01] * 7))
     fitter.setDaughter(1, -1, np.array([-1.0, 0.0, 0.0]), np.array([ 1.0, 0.0, 0.0]), np.diag([0.01] * 7))
-    fitter.fit(3, 1.5)
+    fitter.fit(3)
 
     print("Vertex", fitter.getVertex())
     print("Chi2 / NDF", fitter.getChi2(), " / ", fitter.getNDF())

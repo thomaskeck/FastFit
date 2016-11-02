@@ -26,26 +26,46 @@ class Helix {
      * with the corresponding p in the same magnetic field yield the same parametrisation.
      */
     Helix(double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p);
+      
+    /**
+     * Create an empty Helix object 
+     */
+    Helix() = default;
+
+    /**
+     * Copy a Helix object
+     */
+    Helix(const Helix&) = default;
+
+    /**
+     * Assign a Helix object
+     */
+    Helix& operator=(const Helix &) = default;
+
+    /**
+     * Return alpha
+     */
+    inline double GetAlpha() const { return m_alpha; }
 
     /**
      * Return 5 dimensional helix parametrisation
      */
-    inline Eigen::Matrix<double, 5, 1> GetParametrisation() const { return m_parametrisation; }
+    inline const Eigen::Matrix<double, 5, 1>& GetParametrisation() const { return m_parametrisation; }
   
     /**
      * Return Jacobian for Vertex Coordinates
      */
-    inline Eigen::Matrix<double, 5, 3> GetVertexJacobian() const { return m_A; }
+    inline const Eigen::Matrix<double, 5, 3>& GetVertexJacobian() const { return m_A; }
     
     /**
      * Return Jacobian for Momentum Coordindates
      */
-    inline Eigen::Matrix<double, 5, 3> GetMomentumJacobian() const { return m_B; }
+    inline const Eigen::Matrix<double, 5, 3>& GetMomentumJacobian() const { return m_B; }
     
     /**
      * Return Constant offset of linear expansion
      */
-    inline Eigen::Matrix<double, 5, 1> GetConstantOffset() const { return m_c0; }
+    inline const Eigen::Matrix<double, 5, 1>& GetConstantOffset() const { return m_c0; }
 
     /**
      * Return position at perigee
@@ -71,6 +91,7 @@ class Helix {
 
 
   private:
+    double m_alpha; /**< Magnetic field times charge times kappa */
     Eigen::Matrix<double, 5, 1> m_parametrisation; /**< 5 dimensional Helix parametrisation */
     Eigen::Matrix<double, 5, 3> m_A; /**< Jacobi matrix for vertex coordinates */
     Eigen::Matrix<double, 5, 3> m_B; /**< Jacobi matrix for momentum coordinates */
@@ -94,7 +115,7 @@ class FastFit {
      * of the given particle object
      * @param mother the particle which decay vertex is fitted
      */
-    FastFit(unsigned int numberOfDaughters);
+    FastFit(unsigned int numberOfDaughters, double magnetic_field = 1.5);
 
     /**
      * Set kinematic information of i-th daughter particle
@@ -111,11 +132,17 @@ class FastFit {
           throw std::runtime_error("Invalid index passed to SetDaughter");
         }
 
-        m_charges[i] = charge;
-        m_momenta[i] << momentum[X], momentum[Y], momentum[Z];
-        m_smoothed_momenta[i] = m_momenta[i];
-        m_positions[i] << vertex[X], vertex[Y], vertex[Z];
+        const double alpha = m_magnetic_field * charge * kappa;
+    
+        Eigen::Matrix<double, 3, 1> x;
+        x << vertex[X], vertex[Y], vertex[Z];
+        
+        Eigen::Matrix<double, 3, 1> p;
+        p << momentum[X], momentum[Y], momentum[Z];
+        
+        m_original_helix[i] = Helix(alpha, x, p);
 
+        m_smoothed_momenta[i] = p;
         // (x, p) instead of (p, E, x)
         m_variances[i] << error[4][4], error[4][5], error[4][6], error[4][0], error[4][1], error[4][2],
                     error[5][4], error[5][5], error[5][6], error[5][0], error[5][1], error[5][2],
@@ -130,7 +157,7 @@ class FastFit {
      * @param maximumNumberOfFitIterations the maximum number of kalman fit iterations
      * @param magnetic_field the magnetic field to use in tesla
      */
-    bool fit(unsigned int maximumNumberOfFitIterations = 3, double magnetic_field = 1.5);
+    bool fit(unsigned int maximumNumberOfFitIterations = 3);
 
     /**
      * Get Chi2 of last vertex fit
@@ -185,8 +212,23 @@ class FastFit {
 
     }
 
-
   private:
+
+    /**
+     * Kappa as defined in Data Analysis Techniques for High Energy Physics p. 258,
+     * but divided by 100 to convert from m to cm.
+     *
+     * It is the same number that KFit uses as well (see KFitConst.h)
+     *
+     * It depends on the units we are using:
+     * Magnetic field in T
+     * Distances in cm
+     * Momenta in GeV/c
+     * Charges in C/e
+     */
+    const double kappa = -0.00299792458;
+
+    double m_magnetic_field; /**< Magnetic field along the z-axis */
     unsigned int m_ndf; /**< Number of degrees of freedom of the fit */
     double m_chi2; /**< Chi2 value of the fit */
 
@@ -196,21 +238,15 @@ class FastFit {
 
     unsigned int m_numberOfDaughters; /**< Number of daughters */
 
-    std::vector<int> m_charges; /**< Vector containing the charges in multiples of e of the daughter particles */
-    std::vector<Eigen::Matrix<double, 3, 1>> m_momenta; /**< Vector containing momenta of the daughter particles */
+    std::vector<Helix> m_original_helix; /**< Original helix parametrisation */
+    std::vector<Helix> m_current_helix; /**< Current helix parametrisation */
+
     std::vector<Eigen::Matrix<double, 3, 1>> m_smoothed_momenta; /**< Vector containing smoothed momenta of the daughter particles */
-    std::vector<Eigen::Matrix<double, 3, 1>> m_positions; /**< Vector containing positions of the daughter particles */
     std::vector<Eigen::Matrix<double, 6, 6>> m_variances; /**< Vector containing variance matrices of the daughter particles */
 
     std::vector<Eigen::Matrix<double, 5, 5>> m_G; /**< Inverse covariance of measurement with 5 parameters */
     std::vector<Eigen::Matrix<double, 5, 5>> m_GB; /**< G Matrix modified with B Matrix term */
-
-    std::vector<Eigen::Matrix<double, 5, 3>> m_A; /**< Position matrix of linearisation */
-    std::vector<Eigen::Matrix<double, 5, 3>> m_B; /**< Momentum matrix of linearisation */
-    std::vector<Eigen::Matrix<double, 5, 1>> m_c; /**< Constant term of linearisation */
-
     std::vector<Eigen::Matrix<double, 3, 3>> m_S; /**< S Matrix similar to the Hut Matrix */
-    std::vector<Eigen::Matrix<double, 5, 1>> m_measurement; /**< Measurement state vector with 5 parameters */
 
 };
 

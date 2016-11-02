@@ -171,11 +171,11 @@ std::vector<std::vector<double>> createDiagonalErrorMatrix(double position_varia
 
 TEST_F(FastFitTest, TestNeutralParticles)
 {
-  FastFit fitter(2);
+  FastFit fitter(2, 1.5);
 
   fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
   fitter.SetDaughter(1, 0, std::vector<double>{ 1.0, 0.0, 1.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
-  fitter.fit(3, 1.5);
+  fitter.fit(3);
   
   // Neutral particles like photons just move along a straight line
   // So The solution is just the intersection point of the two lines
@@ -199,7 +199,7 @@ TEST_F(FastFitTest, TestNeutralParticles)
   
   fitter.SetDaughter(0, 0, std::vector<double>{0.0, 1.0, -1.0}, std::vector<double>{0.0, 0.0,  1.0}, createDiagonalErrorMatrix());
   fitter.SetDaughter(1, 0, std::vector<double>{0.0, 1.0,  1.0}, std::vector<double>{0.0, 0.0, -1.0}, createDiagonalErrorMatrix());
-  fitter.fit(3, 1.5);
+  fitter.fit(3);
 
   EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.001);
   EXPECT_NEAR(fitter.GetVertex(1), 1.0, 0.001);
@@ -220,7 +220,7 @@ TEST_F(FastFitTest, TestNeutralParticles)
   
   fitter.SetDaughter(0, 0, std::vector<double>{1.0, -1.0, 1.0}, std::vector<double>{0.0,  1.0, 0.0}, createDiagonalErrorMatrix());
   fitter.SetDaughter(1, 0, std::vector<double>{1.0,  1.0, 1.0}, std::vector<double>{0.0, -1.0, 0.0}, createDiagonalErrorMatrix());
-  fitter.fit(3, 1.5);
+  fitter.fit(3);
 
   EXPECT_NEAR(fitter.GetVertex(0), 1.0, 0.001);
   EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.001);
@@ -247,7 +247,7 @@ TEST_F(FastFitTest, TestNeutralParticles)
 
   fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0,  0.0, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
   fitter.SetDaughter(1, 0, std::vector<double>{ 1.0, 0.0, 1.0}, std::vector<double>{-1.0,  0.0, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
-  fitter.fit(3, 1.5);
+  fitter.fit(3);
   //std::cout << std::setprecision(3) << std::fixed;
   std::cout << fitter.GetVertex(0) << " " << fitter.GetVertex(1) << " " << fitter.GetVertex(2) << "       ";
   std::cout << fitter.GetDaughterMomentum(0, 0) << " " << fitter.GetDaughterMomentum(0, 1) << " " << fitter.GetDaughterMomentum(0, 2) << "      ";
@@ -259,7 +259,7 @@ TEST_F(FastFitTest, TestNeutralParticles)
 
   fitter.SetDaughter(0, 0, std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{ 1.0,  0.1, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
   fitter.SetDaughter(1, 0, std::vector<double>{ 1.0, 0.0, 1.0}, std::vector<double>{-1.0, -0.1, 0.0}, createDiagonalErrorMatrix(0.1, 0.01));
-  fitter.fit(3, 1.5);
+  fitter.fit(3);
   //std::cout << std::setprecision(3) << std::fixed;
   std::cout << fitter.GetVertex(0) << " " << fitter.GetVertex(1) << " " << fitter.GetVertex(2) << "       ";
   std::cout << fitter.GetDaughterMomentum(0, 0) << " " << fitter.GetDaughterMomentum(0, 1) << " " << fitter.GetDaughterMomentum(0, 2) << "      ";
@@ -301,10 +301,10 @@ TEST_F(FastFitTest, TestChargedParticles)
   double old_vertex_y = -1.0;
 
   for(unsigned int i = 1; i <= 10; ++i) {
-      FastFit fitter(2);
+      FastFit fitter(2, 1.5);
       fitter.SetDaughter(0,  1, std::vector<double>{ 0.1*i, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
       fitter.SetDaughter(1, -1, std::vector<double>{-0.1*i, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
-      fitter.fit(3, 1.5);
+      fitter.fit(3);
      
       /* 
       std::cout << std::setprecision(6) << std::fixed;
@@ -347,10 +347,10 @@ TEST_F(FastFitTest, TestChargedParticles)
       EXPECT_NEAR(std::hypot(fitter.GetDaughterMomentum(1, 0), fitter.GetDaughterMomentum(1, 1)),  0.1 * i, 0.001);
        
       // Opposite momenta
-      FastFit ofitter(2);
+      FastFit ofitter(2, 1.5);
       ofitter.SetDaughter(0,  1, std::vector<double>{-0.1*i, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
       ofitter.SetDaughter(1, -1, std::vector<double>{ 0.1*i, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
-      ofitter.fit(3, 1.5);
+      ofitter.fit(3);
       
       EXPECT_NEAR(fitter.GetVertex(0), ofitter.GetVertex(0), 0.001);
       EXPECT_NEAR(fitter.GetVertex(1), -ofitter.GetVertex(1), 0.001);
@@ -367,7 +367,7 @@ TEST_F(FastFitTest, TestChargedParticles)
       // Opposite charge
       ofitter.SetDaughter(0, -1, std::vector<double>{ 0.1*i, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
       ofitter.SetDaughter(1,  1, std::vector<double>{-0.1*i, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
-      ofitter.fit(3, 1.5);
+      ofitter.fit(3);
       
       EXPECT_NEAR(fitter.GetVertex(0), ofitter.GetVertex(0), 0.001);
       EXPECT_NEAR(fitter.GetVertex(1), -ofitter.GetVertex(1), 0.001);

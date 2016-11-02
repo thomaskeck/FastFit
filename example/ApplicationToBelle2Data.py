@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     for n, f in files:
         df = pandas.read_pickle(os.path.join('data', f))
-        fitter = FastFit.FastFit(n)
+        fitter = FastFit.FastFit(n, 1.5)
 
         df['fastfit_dx'] = 0.0
         df['fastfit_dy'] = 0.0
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                         variance[j, k] = decay['momVertCovM_{}{}_{}'.format(j, k, i)]
                 fitter.setDaughter(i, charge, momentum, position, variance)
 
-            fitter.fit(3, 1.5)
+            fitter.fit(3)
 
             vertex = fitter.getVertex()
             decay['fastfit_x'] = vertex[0]

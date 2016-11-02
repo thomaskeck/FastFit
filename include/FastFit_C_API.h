@@ -4,11 +4,11 @@
 
 extern "C" {
 
-    void* Create(unsigned int numberOfDaughters);
+    void* Create(unsigned int numberOfDaughters, double magnetic_field);
 
     void Delete(void*);
 
-    bool fit(void*, unsigned int maximumNumberOfFitIterations, double magnetic_field);
+    bool fit(void*, unsigned int maximumNumberOfFitIterations);
     
     void SetDaughter(void*, unsigned int i, int charge, double* momentum, double* vertex, double* error);
 

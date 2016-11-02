@@ -6,8 +6,8 @@
 
 extern "C" {
 
-    void* Create(unsigned int numberOfDaughters) {
-        FastFit *ff = new(std::nothrow) FastFit(numberOfDaughters);
+    void* Create(unsigned int numberOfDaughters, double magnetic_field) {
+        FastFit *ff = new(std::nothrow) FastFit(numberOfDaughters, magnetic_field);
         return ff;
     }
 
@@ -15,9 +15,9 @@ extern "C" {
         delete reinterpret_cast<FastFit*>(ptr);
     }
 
-    bool fit(void* ptr, unsigned int maximumNumberOfFitIterations, double magnetic_field) {
+    bool fit(void* ptr, unsigned int maximumNumberOfFitIterations) {
         FastFit *ff = reinterpret_cast<FastFit*>(ptr);
-        return ff->fit(maximumNumberOfFitIterations, magnetic_field);
+        return ff->fit(maximumNumberOfFitIterations);
     }
     
     void SetDaughter(void* ptr, unsigned int i, int charge, double* momentum, double* vertex, double* error) {

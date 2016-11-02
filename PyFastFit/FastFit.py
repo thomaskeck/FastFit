@@ -20,11 +20,11 @@ print('Loaded ', FastFit_library)
     
 
 FastFit_library.Create.restype = ctypes.c_void_p
-FastFit_library.Create.argtypes = [ctypes.c_uint]
+FastFit_library.Create.argtypes = [ctypes.c_uint, ctypes.c_double]
 
 FastFit_library.Delete.argtypes = [ctypes.c_void_p]
 
-FastFit_library.fit.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_double]
+FastFit_library.fit.argtypes = [ctypes.c_void_p, ctypes.c_uint]
 
 FastFit_library.SetDaughter.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, c_double_p, c_double_p, c_double_p]
 
@@ -45,8 +45,8 @@ FastFit_library.getNDF.restype = ctypes.c_uint
 
 
 class FastFit(object):
-    def __init__(self, numberOfDaughters):
-        self.fitter = FastFit_library.Create(numberOfDaughters);
+    def __init__(self, numberOfDaughters, magneticField=1.5):
+        self.fitter = FastFit_library.Create(int(numberOfDaughters), float(magneticField));
 
     def setDaughter(self, daughter, charge, momentum, position, variance):
         momentum = np.require(momentum, dtype=np.float64, requirements=['A', 'W', 'C', 'O'])
@@ -57,17 +57,17 @@ class FastFit(object):
                                     position.ctypes.data_as(c_double_p),
                                     variance.ctypes.data_as(c_double_p))
 
-    def fit(self, numberOfIterations=3, magneticField=1.5):
-        FastFit_library.fit(self.fitter, int(numberOfIterations), float(magneticField))
+    def fit(self, numberOfIterations=3):
+        FastFit_library.fit(self.fitter, int(numberOfIterations))
     
     def getVertex(self):
-        return np.array([FastFit_library.GetVertex(self.fitter, i) for i in range(3)])
+        return np.array([FastFit_library.GetVertex(self.fitter, int(i)) for i in range(3)])
     
     def getDaughterMomentum(self, daughter):
-        return np.array([FastFit_library.GetDaughterMomentum(self.fitter, daughter, i) for i in range(3)])
+        return np.array([FastFit_library.GetDaughterMomentum(self.fitter, int(daughter), int(i)) for i in range(3)])
     
     def getDaughterVariance(self, daughter):
-        return np.array([[FastFit_library.GetDaughterVariance(self.fitter, daughter, i, j) for i in range(6)] for j in range(6)])
+        return np.array([[FastFit_library.GetDaughterVariance(self.fitter, int(daughter), int(i), int(j)) for i in range(6)] for j in range(6)])
 
     def getChi2(self):
         return FastFit_library.getChi2(self.fitter)

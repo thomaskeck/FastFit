@@ -5,7 +5,7 @@
 #include <FastFit.h>
 #include <cmath>
 
-Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p) {
+Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eigen::Matrix<double, 3, 1> &p) : m_alpha(alpha) {
   
   // Transverse momentum squared
   const double T = p(X)*p(X) + p(Y)*p(Y);
@@ -87,49 +87,30 @@ Eigen::Matrix<double, 5, 1> centerAngle(Eigen::Matrix<double, 5, 1> p, double ce
 
 }
 
-FastFit::FastFit(unsigned int numberOfDaughters) {
+FastFit::FastFit(unsigned int numberOfDaughters, double magnetic_field) {
 
   m_numberOfDaughters = numberOfDaughters;
+  m_magnetic_field = magnetic_field;
 
-  m_charges.resize(m_numberOfDaughters);
-  m_momenta.resize(m_numberOfDaughters);
   m_smoothed_momenta.resize(m_numberOfDaughters);
-  m_positions.resize(m_numberOfDaughters);
+  m_original_helix.resize(m_numberOfDaughters);
+  m_current_helix.resize(m_numberOfDaughters);
   m_variances.resize(m_numberOfDaughters);
 
-  m_A.resize(m_numberOfDaughters);
-  m_B.resize(m_numberOfDaughters);
-  m_c.resize(m_numberOfDaughters);
   m_G.resize(m_numberOfDaughters);
   m_GB.resize(m_numberOfDaughters);
   m_S.resize(m_numberOfDaughters);
-  m_measurement.resize(m_numberOfDaughters);
   
   m_vertex = Eigen::Matrix<double, 3, 1>::Zero();
 }
 
-bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_field)
+bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
 {
 
   Eigen::Matrix<double, 5, 6> J;
   Eigen::Matrix<double, 5, 5> G_inv;
   Eigen::Matrix<double, 3, 3> S_inv;
  
-  /**
-   * Kappa as defined in Data Analysis Techniques for High Energy Physics p. 258,
-   * but divided by 100 to convert from m to cm.
-   *
-   * It is the same number that KFit uses as well (see KFitConst.h)
-   *
-   * It depends on the units we are using:
-   * Magnetic field in T
-   * Distances in cm
-   * Momenta in GeV/c
-   * Charges in C/e
-   */
-   const double kappa = -0.00299792458; 
-
-
   unsigned int iteration;
   for (iteration = 0; iteration < maximumNumberOfFitIterations; ++iteration) {
 
@@ -147,38 +128,21 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
 
     for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
 
-      auto charge = m_charges[i];
-      auto& p = m_momenta[i];
-      auto& p_s = m_smoothed_momenta[i];
-      auto& x = m_positions[i];
-      auto& V = m_variances[i];
-
-      auto& A = m_A[i];
-      auto& B = m_B[i];
-      auto& c = m_c[i];
-
+      const auto& p_s = m_smoothed_momenta[i];
+      const auto& V = m_variances[i];
       auto& G = m_G[i];
       auto& GB = m_GB[i];
-
       auto& S = m_S[i];
-      auto& measurement = m_measurement[i];
-
-      const double alpha = magnetic_field * charge * kappa;
-      // TODO Measurement can be calculated outside this loop.
-      // It does not change between iterations!
-      Helix helix_perigee(alpha, x, p);
-      measurement << helix_perigee.GetParametrisation();
      
       if(iteration == 0) {
-        A = helix_perigee.GetVertexJacobian();
-        B = helix_perigee.GetMomentumJacobian();
-        c = helix_perigee.GetConstantOffset();
+        m_current_helix[i] = m_original_helix[i];
       } else {
-        Helix helix_vertex(alpha, current_vertex, p_s);
-        A = helix_vertex.GetVertexJacobian();
-        B = helix_vertex.GetMomentumJacobian();
-        c = helix_vertex.GetConstantOffset();
+        m_current_helix[i] = Helix(m_original_helix[i].GetAlpha(), current_vertex, p_s);
       }
+      const auto &measurement = m_original_helix[i].GetParametrisation();
+      const auto &A = m_current_helix[i].GetVertexJacobian();
+      const auto &B = m_current_helix[i].GetMomentumJacobian();
+      const auto &c = m_current_helix[i].GetConstantOffset();
 
       J.block<5, 3>(0, 0) = A;
       J.block<5, 3>(0, 3) = B;
@@ -216,14 +180,13 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
 
       auto& p_s = m_smoothed_momenta[i];
 
-      auto& A = m_A[i];
-      auto& B = m_B[i];
-      auto& c = m_c[i];
+      const auto &measurement = m_original_helix[i].GetParametrisation();
+      const auto &A = m_current_helix[i].GetVertexJacobian();
+      const auto &B = m_current_helix[i].GetMomentumJacobian();
+      const auto &c = m_current_helix[i].GetConstantOffset();
 
-      auto& G = m_G[i];
-      auto& S = m_S[i];
-
-      auto& measurement = m_measurement[i];
+      const auto& G = m_G[i];
+      const auto& S = m_S[i];
 
       // New smoothed momentum at the final vertex position
       p_s = S * B.transpose() * G * centerAngle(measurement - c - A * m_vertex, measurement(2));
@@ -238,17 +201,16 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations, double magnetic_fie
 
   for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
 
-    auto& p_s = m_smoothed_momenta[i];
+    const auto& p_s = m_smoothed_momenta[i];
     auto& V = m_variances[i];
 
-    auto& A = m_A[i];
-    auto& B = m_B[i];
-    auto& c = m_c[i];
+    const auto& G = m_G[i];
+    const auto& S = m_S[i];
 
-    auto& G = m_G[i];
-    auto& S = m_S[i];
-
-    auto& measurement = m_measurement[i];
+    const auto &measurement = m_original_helix[i].GetParametrisation();
+    const auto &A = m_current_helix[i].GetVertexJacobian();
+    const auto &B = m_current_helix[i].GetMomentumJacobian();
+    const auto &c = m_current_helix[i].GetConstantOffset();
 
     E = - m_C * A.transpose() * G * B * S;
     // TODO Does m_C has to be retransformed to the original X variance position?
