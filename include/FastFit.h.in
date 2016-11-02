@@ -388,6 +388,7 @@ class FastFit {
     Eigen::Matrix<double, 3, 1> m_vertex; /**< Vertex position vector */
     Eigen::Matrix<double, 3, 3> m_C; /**< Vertex covariance matrix */
     Eigen::Matrix<double, 3, 3> m_C_inv; /**< Inverted vertex covariance matrix */
+    Eigen::Matrix<double, 3, 3> m_P; /**< Momentum covariance matrix */
 
     unsigned int m_numberOfDaughters; /**< Number of daughters */
 
@@ -400,6 +401,7 @@ class FastFit {
     std::vector<Eigen::Matrix<double, 5, 5>> m_G; /**< Inverse covariance of measurement with 5 parameters */
     std::vector<Eigen::Matrix<double, 5, 5>> m_GB; /**< G Matrix modified with B Matrix term */
     std::vector<Eigen::Matrix<double, 3, 3>> m_S; /**< S Matrix similar to the Hut Matrix */
+    std::vector<Eigen::Matrix<double, 3, 3>> m_E; /**< covariance matrix between x and q */
 
 };
 

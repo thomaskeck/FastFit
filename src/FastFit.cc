@@ -100,6 +100,7 @@ FastFit::FastFit(unsigned int numberOfDaughters, double magnetic_field) {
   m_G.resize(m_numberOfDaughters);
   m_GB.resize(m_numberOfDaughters);
   m_S.resize(m_numberOfDaughters);
+  m_E.resize(m_numberOfDaughters);
 
   // Initial guess for vertex is just the IP
   // with a very large uncertainty (this makes the fit more stable)
@@ -198,7 +199,8 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
   m_ndf = 0;
 
   Eigen::Matrix<double, 5, 1> r;
-  Eigen::Matrix<double, 3, 3> E;
+
+  m_P = Eigen::Matrix<double, 3, 3>::Zero();
 
   for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
 
@@ -207,6 +209,7 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
 
     const auto& G = m_G[i];
     const auto& S = m_S[i];
+    auto& E = m_E[i];
 
     const auto &measurement = m_original_helix[i].GetParametrisation();
     const auto &A = m_current_helix[i].GetVertexJacobian();
@@ -217,11 +220,21 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
     V.block<3, 3>(0, 0) = m_C;
     V.block<3, 3>(3, 3) = S + E.transpose() * m_C_inv * E;
     V.block<3, 3>(3, 0) = E;
-    V.block<3, 3>(0, 3) = E;
+    V.block<3, 3>(0, 3) = E.transpose();
+
+    // Variance of momentum
+    m_P += V.block<3, 3>(3, 3);
 
     r = centerAngle(measurement - c - A * m_vertex - B * p_s, measurement(2));
     m_chi2 += (r.transpose() * G * r)(0, 0);
 
+  }
+  
+  // Covariance of momenta
+  for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
+    for (unsigned int j = 0; j < i; ++j) {
+        m_P += 2 * m_E[i].transpose() * m_C_inv * m_E[j];
+    }
   }
 
   m_ndf = 2 * m_numberOfDaughters - 3;
@@ -250,15 +263,17 @@ double FastFit::GetDaughterVariance(unsigned int i, unsigned int component_i, un
 
 double FastFit::GetVariance(unsigned int component_i, unsigned int component_j) const {
     if(component_i >= 6) {
-      throw std::runtime_error("Invalid index passed to GetDaughterMomentum");
+      throw std::runtime_error("Invalid index passed to GetVariance");
     }
     if(component_j >= 6) {
-      throw std::runtime_error("Invalid index passed to GetDaughterMomentum");
+      throw std::runtime_error("Invalid index passed to GetVariance");
     }
 
     double variance = 0;
-    if(component_i >= 3 && component_j >= 3) {
+    if(component_i < 3 && component_j < 3) {
       variance = m_C(component_i, component_j);
+    } else if(component_i >= 3 && component_j >= 3) {
+      variance = m_P(component_i - 3, component_j - 3); 
     } else {
         for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
           variance += m_variances[i](component_i, component_j);
