@@ -20,6 +20,19 @@ extern "C" {
         return ff->fit(maximumNumberOfFitIterations);
     }
     
+    void SetIPProfile(void* ptr, double* vertex, double* variance) {
+        FastFit *ff = reinterpret_cast<FastFit*>(ptr);
+        std::vector<std::vector<double>> error_2d(3);
+        for(unsigned int j = 0; j < 3; ++j) {
+            std::vector<double> temp(3);
+            for(unsigned int k = 0; k < 3; ++k) {
+                temp[k] = variance[j*3 + k];
+            }
+            error_2d[j] = temp;
+        }
+        ff->SetIPProfile(vertex, error_2d);
+    }
+    
     void SetDaughter(void* ptr, unsigned int i, int charge, double* momentum, double* vertex, double* error) {
         FastFit *ff = reinterpret_cast<FastFit*>(ptr);
         std::vector<std::vector<double>> error_2d(7);

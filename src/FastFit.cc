@@ -100,6 +100,17 @@ FastFit::FastFit(unsigned int numberOfDaughters, double magnetic_field) {
   m_G.resize(m_numberOfDaughters);
   m_GB.resize(m_numberOfDaughters);
   m_S.resize(m_numberOfDaughters);
+
+  // Initial guess for vertex is just the IP
+  // with a very large uncertainty (this makes the fit more stable)
+  m_use_ip_constraint = false;
+  m_ip_vertex = Eigen::Matrix<double, 3, 1>::Zero();
+  m_ip_variance << 1000.0,   0.0,   0.0,
+                       0.0, 1000.0,   0.0,
+                       0.0,   0.0, 1000.0;
+  m_ip_variance_inv << 0.001,   0.0,   0.0,
+                       0.0, 0.001,   0.0,
+                       0.0,   0.0, 0.001;
   
   m_vertex = Eigen::Matrix<double, 3, 1>::Zero();
 }
@@ -116,15 +127,8 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
 
     Eigen::Matrix<double, 3, 1> current_vertex = m_vertex;
 
-    // Initial guess for vertex is just the IP
-    // with a huge uncertainty of 1 m
-    m_vertex = Eigen::Matrix<double, 3, 1>::Zero();
-    m_C << 100.0,   0.0,   0.0,
-        0.0, 100.0,   0.0,
-        0.0,   0.0, 100.0;
-    m_C_inv << 0.01, 0.0, 0.0,
-            0.0, 0.01, 0.0,
-            0.0, 0.0, 0.01;
+    m_vertex = m_ip_variance_inv * m_ip_vertex;
+    m_C_inv = m_ip_variance_inv;
 
     for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
 
@@ -150,9 +154,6 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
 
       if (invertAndCheck(G_inv, G) == false) {
         std::cout << "Affected Matrix was G" << std::endl;
-        std::cout << G_inv << std::endl << std::endl;
-        std::cout << J << std::endl << std::endl;
-        std::cout << V << std::endl << std::endl;
         return false;
       }
 
@@ -224,6 +225,10 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
   }
 
   m_ndf = 2 * m_numberOfDaughters - 3;
+
+  if (m_use_ip_constraint) {
+    m_ndf += 3;
+  }
 
   return true;
 }

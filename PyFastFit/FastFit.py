@@ -26,6 +26,8 @@ FastFit_library.Delete.argtypes = [ctypes.c_void_p]
 
 FastFit_library.fit.argtypes = [ctypes.c_void_p, ctypes.c_uint]
 
+FastFit_library.SetIPProfile.argtypes = [ctypes.c_void_p, c_double_p, c_double_p]
+
 FastFit_library.SetDaughter.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, c_double_p, c_double_p, c_double_p]
 
 FastFit_library.getChi2.argtypes = [ctypes.c_void_p]
@@ -50,6 +52,11 @@ FastFit_library.getNDF.restype = ctypes.c_uint
 class FastFit(object):
     def __init__(self, numberOfDaughters, magneticField=1.5):
         self.fitter = FastFit_library.Create(int(numberOfDaughters), float(magneticField));
+    
+    def setIPProfile(self, ip_vertex, ip_variance):
+        ip_vertex = np.require(ip_vertex, dtype=np.float64, requirements=['A', 'W', 'C', 'O'])
+        ip_variance = np.require(ip_variance, dtype=np.float64, requirements=['A', 'W', 'C', 'O'])
+        FastFit_library.SetDaughter(self.fitter, ip_vertex.ctypes.data_as(c_double_p), ip_variance.ctypes.data_as(c_double_p))
 
     def setDaughter(self, daughter, charge, momentum, position, variance):
         momentum = np.require(momentum, dtype=np.float64, requirements=['A', 'W', 'C', 'O'])

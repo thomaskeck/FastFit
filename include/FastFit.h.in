@@ -118,6 +118,37 @@ class FastFit {
     FastFit(unsigned int numberOfDaughters, double magnetic_field = 1.5);
 
     /**
+     * Set IP Profile to constrain the fit to the intersection point region
+     * by adding an additional measurement
+     * @param vertex
+     * @param coveriance (3x3 matrix object)
+     */
+    template<class TV, class TE>
+    void SetIPProfile(const TV &vertex, const TE &variance) {
+
+        m_use_ip_constraint = true;
+        m_ip_vertex << vertex[X], vertex[Y], vertex[Z];
+        Eigen::Matrix<double, 3, 3> ip_variance;
+        m_ip_variance << variance[X][X], variance[X][Y], variance[X][Z],
+                         variance[Y][X], variance[Y][Y], variance[Y][Z],
+                         variance[Z][X], variance[Z][Y], variance[Z][Z];
+
+        if (invertAndCheck(m_ip_variance, m_ip_variance_inv) == false) {
+          std::cout << "Affected Matrix was m_ip_variance_inv" << std::endl;
+          std::cout << "Setting the IP Profile failed! I reset the constraint to 0." << std::endl;
+          m_use_ip_constraint = false;
+          m_ip_vertex = Eigen::Matrix<double, 3, 1>::Zero();
+          m_ip_variance << 1000.0,   0.0,   0.0,
+                               0.0, 1000.0,   0.0,
+                               0.0,   0.0, 1000.0;
+          m_ip_variance_inv << 0.001,   0.0,   0.0,
+                               0.0, 0.001,   0.0,
+                               0.0,   0.0, 0.001;
+        }
+
+    }
+
+    /**
      * Set kinematic information of i-th daughter particle
      * @param i the index of the daughter you want to set
      * @param charge the charge of the particle in units of e
@@ -344,6 +375,11 @@ class FastFit {
      * Charges in C/e
      */
     const double kappa = -0.00299792458;
+
+    bool m_use_ip_constraint; /**< Use IP constraint, important for the number of degrees of freedom */
+    Eigen::Matrix<double, 3, 1> m_ip_vertex; /**< IP vertex used for ip profile constraint */
+    Eigen::Matrix<double, 3, 3> m_ip_variance; /**< IP vertex variance used for ip profile constraint */
+    Eigen::Matrix<double, 3, 3> m_ip_variance_inv; /**< Inverse IP vertex variance used for ip profile constraint */
 
     double m_magnetic_field; /**< Magnetic field along the z-axis */
     unsigned int m_ndf; /**< Number of degrees of freedom of the fit */

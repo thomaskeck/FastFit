@@ -10,6 +10,8 @@ extern "C" {
 
     bool fit(void*, unsigned int maximumNumberOfFitIterations);
     
+    void SetIPProfile(void*, double* vertex, double* variance);
+    
     void SetDaughter(void*, unsigned int i, int charge, double* momentum, double* vertex, double* error);
 
     double getChi2(void*);

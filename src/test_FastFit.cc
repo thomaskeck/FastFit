@@ -261,15 +261,7 @@ TEST_F(FastFitTest, TestChargedParticles)
       fitter.SetDaughter(0,  1, std::vector<double>{ 0.1*i, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
       fitter.SetDaughter(1, -1, std::vector<double>{-0.1*i, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
       fitter.fit(3);
-     
-      /* 
-      std::cout << std::setprecision(6) << std::fixed;
-      std::cout << fitter.GetVertex(0) << " " << fitter.GetVertex(1) << " " << fitter.GetVertex(2) << "        ";
-      std::cout << fitter.GetDaughterMomentum(0, 0) << " " << fitter.GetDaughterMomentum(0, 1) << " " << fitter.GetDaughterMomentum(0, 2) << "      ";
-      std::cout << fitter.GetDaughterMomentum(1, 0) << " " << fitter.GetDaughterMomentum(1, 1) << " " << fitter.GetDaughterMomentum(1, 2) << "      ";
-      std::cout << std::endl;
-      */
-      
+    
       // X und Z Component of vertex should be always 0
       EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.001);
       EXPECT_NEAR(fitter.GetVertex(2), 0.0, 0.001);
@@ -338,6 +330,47 @@ TEST_F(FastFitTest, TestChargedParticles)
       EXPECT_NEAR(fitter.GetDaughterMomentum(1, 2),   ofitter.GetDaughterMomentum(1, 2), 0.001);
       
     }
+
+}
+
+TEST_F(FastFitTest, TestIPProfileConstraint)
+{
+
+  /**
+   * Set an IP Profile constraint.
+   * We start with a hard constraint to 0,0,1 and release the constraint slowly,
+   * hence the z component of the fitted vertex should move from near 1.0 to near 0.0
+   */
+  double old_vertex_z = 1.0;
+  for(unsigned int i = 1; i < 10; ++i) {
+
+      FastFit fitter(2, 1.5);
+      fitter.SetDaughter(0,  1, std::vector<double>{ 1.0, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      fitter.SetDaughter(1, -1, std::vector<double>{-1.0, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix());
+      fitter.SetIPProfile(std::vector<double>{0.0, 0.0, 1.0}, std::vector<std::vector<double>>{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.001*i}});
+      fitter.fit(3);
+     
+      // x and y component should still be somewhere near 0 
+      EXPECT_NEAR(fitter.GetVertex(0), 0.0, 0.01);
+      EXPECT_NEAR(fitter.GetVertex(1), 0.0, 0.01);
+
+      EXPECT_GT(fitter.GetVertex(2), 0.0);
+      EXPECT_LT(fitter.GetVertex(2), 1.0);
+      EXPECT_LT(fitter.GetVertex(2), old_vertex_z);
+      old_vertex_z = fitter.GetVertex(2);
+  }
+
+  // Next we choose a vertex and set a extremly hard constraint, and increase the uncertainty on the tracks
+  // we should get out the ip.
+  FastFit fitter(2, 1.5);
+  fitter.SetDaughter(0,  1, std::vector<double>{ 1.0, 0.0, 0.0}, std::vector<double>{-1.0, 0.0, 0.0}, createDiagonalErrorMatrix(1.0, 1.0));
+  fitter.SetDaughter(1, -1, std::vector<double>{-1.0, 0.0, 0.0}, std::vector<double>{1.0, 0.0, 0.0}, createDiagonalErrorMatrix(1.0, 1.0));
+  fitter.SetIPProfile(std::vector<double>{-0.2, 0.1, -0.1}, std::vector<std::vector<double>>{{0.000001, 0.0, 0.0}, {0.0, 0.000001, 0.0}, {0.0, 0.0, 0.000001}});
+  fitter.fit(3);
+      
+  EXPECT_NEAR(fitter.GetVertex(0), -0.2, 0.01);
+  EXPECT_NEAR(fitter.GetVertex(1),  0.1, 0.01);
+  EXPECT_NEAR(fitter.GetVertex(2), -0.1, 0.01);
 
 }
 
