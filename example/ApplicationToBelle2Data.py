@@ -14,6 +14,7 @@ import scipy.stats
 if __name__ == '__main__':
 
     files = [(2, 'D0:2.pickle'), (3, 'D+:3.pickle'), (4, 'D0:4.pickle'), (5, 'D+:5.pickle')]
+    ff2belle_cov = [4, 5, 6, 0, 1, 2]
 
     for n, f in files:
         df = pandas.read_pickle(os.path.join('data', f))
@@ -30,7 +31,6 @@ if __name__ == '__main__':
             df['fastfit_py_{}'.format(i)] = 0.0
             df['fastfit_pz_{}'.format(i)] = 0.0
 
-        # TODO Variance is not yet correctly calculated by FastFit
         for j in range(7):
             for k in range(7):
                 df['fastfit_momVertCovM{}{}'.format(j, k)] = 0.0
@@ -45,10 +45,9 @@ if __name__ == '__main__':
                 position = np.array([decay['dx_{}'.format(i)], decay['dy_{}'.format(i)], decay['dz_{}'.format(i)]])
                 variance = np.zeros((6, 6))
 
-                m = [4, 5, 6, 0, 1, 2]
                 for j in range(6):
                     for k in range(6):
-                        variance[j, k] = decay['momVertCovM{}{}_{}'.format(m[j], m[k], i)]
+                        variance[j, k] = decay['momVertCovM{}{}_{}'.format(ff2belle_cov[j], ff2belle_cov[k], i)]
                 fitter.setDaughter(i, charge, momentum, position, variance)
 
             fitter.fit(3)
@@ -82,28 +81,54 @@ if __name__ == '__main__':
         (df['fastfit_dz'] - df['mcDZ']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax3, color='r')
         (df['dz'] - df['mcDZ']).hist(bins=100, range=r, label='KFit', alpha=0.3, ax=ax3, color='b')
         plt.legend()
-        plt.savefig('MC_D{}.png'.format(n))
+        plt.savefig('plots/MC_D{}.png'.format(n))
         plt.clf()
         
-        r = (-0.01, 0.01)
+        r = (-0.005, 0.005)
         f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=True)
         f.suptitle("Deviation from KFit for fit with {} daughters".format(n))
         ax1.set_title("X")
-        (df['fastfit_dx'] - df['dx']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax1, color='r')
+        (df['fastfit_dx'] - df['dx']).hist(bins=100, range=r, label='FastFit', ax=ax1, color='r')
         ax2.set_title("Y")
-        (df['fastfit_dy'] - df['dy']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax2, color='r')
+        (df['fastfit_dy'] - df['dy']).hist(bins=100, range=r, label='FastFit', ax=ax2, color='r')
         ax3.set_title("Z")
-        (df['fastfit_dz'] - df['dz']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax3, color='r')
-        plt.savefig('KF_D{}.png'.format(n))
+        (df['fastfit_dz'] - df['dz']).hist(bins=100, range=r, label='FastFit', ax=ax3, color='r')
+        plt.savefig('plots/KF_D{}.png'.format(n))
         plt.clf()
         
-        r = (0.0, 1.0)
+        r = (-1.0, 1.0)
         f, (ax1, ax2) = plt.subplots(2, sharex=True, sharey=True)
         f.suptitle("Chi2: Distribution and Deviation from KFit")
         ax1.set_title("Chi2")
-        df['fastfit_chiProb'].hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax1, color='r')
-        df['chiProb'].hist(bins=100, range=r, label='KFit', alpha=0.3, ax=ax1, color='b')
+        df['fastfit_chiProb'].hist(bins=100, range=r, label='FastFit', alpha=0.5, ax=ax1, color='r')
+        df['chiProb'].hist(bins=100, range=r, label='KFit', alpha=0.5, ax=ax1, color='b')
+        plt.legend()
         ax2.set_title("Chi")
-        (df['fastfit_chiProb'] - df['chiProb']).hist(bins=100, range=r, label='Deviation', alpha=0.3, ax=ax2, color='r')
-        plt.savefig('ChiProb_D{}.png'.format(n))
+        (df['fastfit_chiProb'] - df['chiProb']).hist(bins=100, range=r, label='Deviation', ax=ax2, color='r')
+        plt.savefig('plots/ChiProb_D{}.png'.format(n))
+        plt.clf()
+        
+        r = (-0.001, 0.001)
+        f, axes = plt.subplots(3, 3, sharex=True, sharey=True)
+        f.suptitle("Momentum Covariance")
+        for j in range(3, 6):
+            for k in range(3, 6):
+                (df['fastfit_momVertCovM{}{}'.format(i,j)] - df['momVertCovM{}{}'.format(ff2belle_cov[j], ff2belle_cov[k])]).hist(bins=100, range=r, label='Deviation', ax=axes[j-3, k-3], color='r')
+        plt.savefig('plots/VarianceMomentum_D{}.png'.format(n))
+        plt.clf()
+        
+        f, axes = plt.subplots(3, 3, sharex=True, sharey=True)
+        f.suptitle("Position Covariance")
+        for j in range(3):
+            for k in range(3):
+                (df['fastfit_momVertCovM{}{}'.format(i,j)] - df['momVertCovM{}{}'.format(ff2belle_cov[j], ff2belle_cov[k])]).hist(bins=100, range=r, label='Deviation', ax=axes[j, k], color='r')
+        plt.savefig('plots/VariancePosition_D{}.png'.format(n))
+        plt.clf()
+        
+        f, axes = plt.subplots(3, 3, sharex=True, sharey=True)
+        f.suptitle("Position Momentum Covariance")
+        for j in range(3, 6):
+            for k in range(3):
+                (df['fastfit_momVertCovM{}{}'.format(i,j)] - df['momVertCovM{}{}'.format(ff2belle_cov[j], ff2belle_cov[k])]).hist(bins=100, range=r, label='Deviation', ax=axes[j-3, k], color='r')
+        plt.savefig('plots/VariancePositionMomentum_D{}.png'.format(n))
         plt.clf()

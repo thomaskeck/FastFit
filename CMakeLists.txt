@@ -9,7 +9,6 @@ set (FastFit_VERSION_MINOR 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
-#set(CMAKE_INSTALL_PREFIX "/local/scratch/ssd/tkeck/externals/v01-03-00/Linux_x86_64/opt/")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -std=c++11 -Wall -g -msse2")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ggdb3 -g -std=c++11 -Wall -Wextra")
 
@@ -18,7 +17,12 @@ configure_file (
   "${PROJECT_BINARY_DIR}/include/FastFit.h"
 )
 
-set(EIGEN3_INCLUDE_DIR "/local/scratch/ssd/tkeck/externals/development/include/")
+find_program(BASF2 "basf2")
+
+if (BASF2)
+    set(CMAKE_INSTALL_PREFIX "$ENV{BELLE2_EXTERNALS_DIR}/$ENV{BELLE2_SUBDIR}")
+    set(EIGEN3_INCLUDE_DIR "$ENV{BELLE2_EXTERNALS_DIR}/include/")
+endif()
 
 find_package(GTest)
 find_package( Eigen3 REQUIRED )
@@ -60,7 +64,7 @@ install(TARGETS FastFit_static FastFit_shared FastFit_CInterface
 
  install(FILES ${FastFit_HEADERS} DESTINATION include)
 
-if(DEFINED ENV{BELLE2_LOCAL_DIR})
+if(BASF2)
   execute_process(COMMAND patch -p1 -d $ENV{BELLE2_LOCAL_DIR} -i ${PROJECT_SOURCE_DIR}/files/Belle2.patch --dry-run RESULT_VARIABLE canpatch)
   if(${canpatch} STREQUAL 0)
     install(CODE "execute_process(COMMAND patch -p1 -d $ENV{BELLE2_LOCAL_DIR} -i ${PROJECT_SOURCE_DIR}/files/Belle2.patch)")
