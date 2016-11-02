@@ -23,10 +23,10 @@ extern "C" {
     void SetDaughter(void* ptr, unsigned int i, int charge, double* momentum, double* vertex, double* error) {
         FastFit *ff = reinterpret_cast<FastFit*>(ptr);
         std::vector<std::vector<double>> error_2d(7);
-        for(unsigned int j = 0; j < 7; ++j) {
-            std::vector<double> temp(7);
-            for(unsigned int k = 0; k < 7; ++k) {
-                temp[k] = error[j*7 + k];
+        for(unsigned int j = 0; j < 6; ++j) {
+            std::vector<double> temp(6);
+            for(unsigned int k = 0; k < 6; ++k) {
+                temp[k] = error[j*6 + k];
             }
             error_2d[j] = temp;
         }

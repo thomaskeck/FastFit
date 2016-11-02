@@ -100,7 +100,7 @@
 +          fitter.Belle2SetDaughter(i, daughters[i]);
 +        }
 +
-+        bool ok = fitter.fit(3);
++        ok = fitter.fit(3);
 +        if (not ok)
 +          return false;
 +        
