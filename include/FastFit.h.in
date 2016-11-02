@@ -123,7 +123,7 @@ class FastFit {
      * @param charge the charge of the particle in units of e
      * @param momentum the momentum in GeV
      * @param vertex the POCA of the track or production vertex in cm
-     * @param error the covariance matrix of momentum, energy and vertex
+     * @param error the covariance matrix of position and momentum (6x6 x,y,z,px,py,pz)
      */
     template<class TM, class TV, class TE>
     void SetDaughter(unsigned int i, int charge, const TM &momentum, const TV &vertex, const TE &error) {
@@ -143,13 +143,123 @@ class FastFit {
         m_original_helix[i] = Helix(alpha, x, p);
 
         m_smoothed_momenta[i] = p;
+        for(unsigned int j = 0; j < 6; ++j) {
+          for(unsigned int k = 0; k < 6; ++k) {
+            m_variances[i](j, k) = error[j][k];
+          }
+        }
+    }
+    
+    /**
+     * Set kinematic information of i-th daughter particle
+     * Convinience function for the Belle II experiment code
+     * @param i the index of the daughter you want to set
+     * @param Particle object of the Belle II software framework
+     */
+    template<class Particle>
+    void Belle2SetDaughter(unsigned int i, const Particle *particle) {
+
+        if(i >= m_numberOfDaughters) {
+          throw std::runtime_error("Invalid index passed to SetDaughter");
+        }
+        
+        const double alpha = m_magnetic_field * particle->Charge() * kappa;
+    
+        Eigen::Matrix<double, 3, 1> x;
+        x << particle->getX(), particle->getY(), particle->getZ();
+        
+        Eigen::Matrix<double, 3, 1> p;
+        p << particle->getPx(), particle->getPy(), particle->getPz();
+        
+        m_original_helix[i] = Helix(alpha, x, p);
+
+        m_smoothed_momenta[i] = p;
         // (x, p) instead of (p, E, x)
-        m_variances[i] << error[4][4], error[4][5], error[4][6], error[4][0], error[4][1], error[4][2],
-                    error[5][4], error[5][5], error[5][6], error[5][0], error[5][1], error[5][2],
-                    error[6][4], error[6][5], error[6][6], error[6][0], error[6][1], error[6][2],
-                    error[0][4], error[0][5], error[0][6], error[0][0], error[0][1], error[0][2],
-                    error[1][4], error[1][5], error[1][6], error[1][0], error[1][1], error[1][2],
-                    error[2][4], error[2][5], error[2][6], error[2][0], error[2][1], error[2][2];
+        const auto& error = particle->getMomentumVertexErrorMatrix();
+        m_variances[i] = {{error[4][4], error[4][5], error[4][6], error[4][0], error[4][1], error[4][2]},
+                          {error[5][4], error[5][5], error[5][6], error[5][0], error[5][1], error[5][2]},
+                          {error[6][4], error[6][5], error[6][6], error[6][0], error[6][1], error[6][2]},
+                          {error[0][4], error[0][5], error[0][6], error[0][0], error[0][1], error[0][2]},
+                          {error[1][4], error[1][5], error[1][6], error[1][0], error[1][1], error[1][2]},
+                          {error[2][4], error[2][5], error[2][6], error[2][0], error[2][1], error[2][2]}};
+
+    }
+    
+    /**
+     * Update kinematic information of the mother particle
+     * Convinience function for the Belle II experiment code
+     * @param Particle object of the Belle II software framework
+     */
+    template<class Particle>
+    void Belle2UpdateMother(Particle *particle) const {
+    
+        auto vertex = particle->getVertex();
+        vertex.SetX(this->GetVertex(X));
+        vertex.SetY(this->GetVertex(Y));
+        vertex.SetZ(this->GetVertex(Z));
+
+        auto momentum = particle->get4Vector();
+        for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
+          decltype(particle->getVertex()) child_momentum;
+
+          child_momentum.SetPx(m_smoothed_momenta[i](X));
+          child_momentum.SetPy(m_smoothed_momenta[i](Y));
+          child_momentum.SetPy(m_smoothed_momenta[i](Z));
+          child_momentum.SetE(particle->getDaughter(i)->getEnergy());
+
+          momentum += child_momentum;
+        }
+
+        auto error = particle->getMomentumVertexErrorMatrix();
+        std::vector<unsigned int> map = {4, 5, 6, 0, 1, 2};
+        for(unsigned int i = 0; i < 6; ++i) {
+          for(unsigned int j = 0; i < 6; ++i) {
+            error(map[i], map[j]) = this->GetVariance(i, j);
+          }
+        }
+
+        particle->setVertex(vertex);
+        particle->set4Vector(momentum);
+        particle->setMomentumVertexErrorMatrix(error);
+
+    }
+    
+    /**
+     * Update kinematic information of i-th daughter particle
+     * Convinience function for the Belle II experiment code
+     * @param i the index of the daughter you want to set
+     * @param Particle object of the Belle II software framework
+     */
+    template<class Particle>
+    void Belle2UpdateDaughter(unsigned int i, Particle *particle) const {
+
+        if(i >= m_numberOfDaughters) {
+          throw std::runtime_error("Invalid index passed to SetDaughter");
+        }
+        
+        auto vertex = particle->getVertex();
+        vertex.SetX(this->GetVertex(X));
+        vertex.SetY(this->GetVertex(Y));
+        vertex.SetZ(this->GetVertex(Z));
+
+        auto momentum = particle->get4Vector();
+        momentum.SetPx(m_smoothed_momenta[i](X));
+        momentum.SetPy(m_smoothed_momenta[i](Y));
+        momentum.SetPy(m_smoothed_momenta[i](Z));
+        momentum.SetE(particle->getDaughter(i)->getEnergy());
+
+        auto error = particle->getMomentumVertexErrorMatrix();
+        std::vector<unsigned int> map = {4, 5, 6, 0, 1, 2};
+        for(unsigned int j = 0; j < 6; ++j) {
+          for(unsigned int k = 0; k < 6; ++k) {
+            error(map[j], map[k]) = this->GetDaughterVariance(i, j, k);
+          }
+        }
+
+        particle->setVertex(vertex);
+        particle->set4Vector(momentum);
+        particle->setMomentumVertexErrorMatrix(error);
+
     }
 
     /**

@@ -213,7 +213,6 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
     const auto &c = m_current_helix[i].GetConstantOffset();
 
     E = - m_C * A.transpose() * G * B * S;
-    // TODO Does m_C has to be retransformed to the original X variance position?
     V.block<3, 3>(0, 0) = m_C;
     V.block<3, 3>(3, 3) = S + E.transpose() * m_C_inv * E;
     V.block<3, 3>(3, 0) = E;
@@ -251,10 +250,16 @@ double FastFit::GetVariance(unsigned int component_i, unsigned int component_j) 
     if(component_j >= 6) {
       throw std::runtime_error("Invalid index passed to GetDaughterMomentum");
     }
-    // TODO At the moment we just return the covariance of the first daughter
-    // Calculate the correct covariance matrix
-    const auto &V = m_variances[0];
-    return V(component_i, component_j);
+
+    double variance = 0;
+    if(component_i >= 3 && component_j >= 3) {
+      variance = m_C(component_i, component_j);
+    } else {
+        for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
+          variance += m_variances[i](component_i, component_j);
+        }
+    }
+    return variance;
 }
     
 
