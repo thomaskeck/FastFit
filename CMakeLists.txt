@@ -9,7 +9,7 @@ set (FastFit_VERSION_MINOR 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
-#set(CMAKE_INSTALL_PREFIX "/local/ssd-scratch/tkeck/prefix/")
+#set(CMAKE_INSTALL_PREFIX "/local/scratch/ssd/tkeck/externals/v01-03-00/Linux_x86_64/opt/")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -std=c++11 -Wall -g -msse2")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ggdb3 -g -std=c++11 -Wall -Wextra")
 
@@ -57,6 +57,8 @@ install(TARGETS FastFit_static FastFit_shared FastFit_CInterface
       ARCHIVE DESTINATION lib
       RUNTIME DESTINATION bin   
    )
+
+ install(FILES ${FastFit_HEADERS} DESTINATION include)
 
 if(DEFINED ENV{BELLE2_LOCAL_DIR})
   execute_process(COMMAND patch -p1 -d $ENV{BELLE2_LOCAL_DIR} -i ${PROJECT_SOURCE_DIR}/files/Belle2.patch --dry-run RESULT_VARIABLE canpatch)

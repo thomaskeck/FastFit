@@ -4,7 +4,7 @@
  // Magnetic field
  #include <framework/geometry/BFieldManager.h>
  
-+#include <analysis/FastFit/FastFit.h>
++#include <FastFit.h>
 +
  #include <TMath.h>
  
@@ -68,11 +68,20 @@
  
    void ParticleVertexFitterModule::event()
    {
+@@ -190,6 +235,7 @@ namespace Belle2 {
+         } else if (m_withConstraint == "iptube") {
+           ok = doKVertexFit(mother, false, true);
+         } else {
++goto FastFitter;
+           ok = doKVertexFit(mother, false, false);
+         }
+       }
 @@ -229,8 +274,49 @@
        }
      }
  
 +    if (m_vertexFitter == "fastfit") {
++FastFitter:
 +      if (m_decayString != "")
 +        B2FATAL("ParticleVertexFitter: fastfit does not support yet selection of daughters via decay string!");
 +      if (m_withConstraint == "iptube" || m_withConstraint == "iptubecut")
@@ -82,14 +91,13 @@
 +
 +      // vertex fit
 +      if (m_fitType == "vertex") {
-+        ok = doFastVertexFit(mother);
 +        auto daughters = mother->getDaughters();
-+        numberOfDaughters = daughters.size();
++        unsigned int numberOfDaughters = daughters.size();
 +        
 +        FastFit fitter(numberOfDaughters, m_Bfield);
 +
 +        for (unsigned int i = 0; i < numberOfDaughters; ++i) {
-+          fitter.Belle2SetDaughter(daughter[i]);
++          fitter.Belle2SetDaughter(i, daughters[i]);
 +        }
 +
 +        bool ok = fitter.fit(3);
@@ -104,7 +112,7 @@
 +
 +        if(m_decayString.empty() && m_updateDaughters == true) {
 +            for (unsigned int i = 0; i < numberOfDaughters; ++i) {
-+              fitter.Belle2UpdateDaughter(daughters[i]);
++              fitter.Belle2UpdateDaughter(i, daughters[i]);
 +              fillEnergyCovariance(daughters[i]);
 +            }
 +        }
@@ -119,3 +127,16 @@
        B2FATAL("ParticleVertexFitter: " << m_vertexFitter << " ***invalid vertex fitter ");
  
      if (!ok) return false;
+diff --git a/analysis/modules/ParticleVertexFitter/SConscript b/analysis/modules/ParticleVertexFitter/SConscript
+index 0f1f9e0..d666de9 100644
+--- a/analysis/modules/ParticleVertexFitter/SConscript
++++ b/analysis/modules/ParticleVertexFitter/SConscript
+@@ -1,7 +1,7 @@
+ Import('env')
+ 
+ env['LIBS'] = ['framework', 'analysis_dataobjects', 'analysis_KFit', 
+-	      'analysis_raveInterface', 'analysis_DecayDescriptor',
++	      'analysis_raveInterface', 'analysis_DecayDescriptor', 'FastFit_shared',
+ 	      'analysis_utility', '$ROOT_LIBS', 'CLHEP']
+ 
+ Return('env')
