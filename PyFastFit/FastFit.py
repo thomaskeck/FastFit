@@ -56,7 +56,7 @@ class FastFit(object):
     def setIPProfile(self, ip_vertex, ip_variance):
         ip_vertex = np.require(ip_vertex, dtype=np.float64, requirements=['A', 'W', 'C', 'O'])
         ip_variance = np.require(ip_variance, dtype=np.float64, requirements=['A', 'W', 'C', 'O'])
-        FastFit_library.SetDaughter(self.fitter, ip_vertex.ctypes.data_as(c_double_p), ip_variance.ctypes.data_as(c_double_p))
+        FastFit_library.SetIPProfile(self.fitter, ip_vertex.ctypes.data_as(c_double_p), ip_variance.ctypes.data_as(c_double_p))
 
     def setDaughter(self, daughter, charge, momentum, position, variance):
         momentum = np.require(momentum, dtype=np.float64, requirements=['A', 'W', 'C', 'O'])
