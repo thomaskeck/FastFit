@@ -53,6 +53,11 @@ extern "C" {
         return ff->GetDaughterVariance(i, component_i, component_j);
     }
 
+    double GetVariance(void* ptr, unsigned int component_i, unsigned int component_j) {
+        FastFit *ff = reinterpret_cast<FastFit*>(ptr);
+        return ff->GetVariance(component_i, component_j);
+    }
+
     double GetVertex(void* ptr, unsigned int component) {
         FastFit *ff = reinterpret_cast<FastFit*>(ptr);
         return ff->GetVertex(component);

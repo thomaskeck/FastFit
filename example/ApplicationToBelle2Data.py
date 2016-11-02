@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # Thomas Keck
 
+import os
+import sys
+
 from PyFastFit import FastFit
+
 import numpy as np
 import pandas
-import os
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
@@ -27,9 +30,12 @@ if __name__ == '__main__':
         # TODO Variance is not yet correctly calculated by FastFit
         for j in range(7):
             for k in range(7):
-                df['fastfit_momVertCovM_{}{}'.format(j, k)] = 0.0
+                df['fastfit_momVertCovM{}{}'.format(j, k)] = 0.0
+
+        df = df[:1000]
 
         for index, decay in df.iterrows():
+            sys.stdout.write("\r{}".format(index))
             for i in range(n):
                 charge = int(decay['charge_{}'.format(i)])
                 momentum = np.array([decay['px_{}'.format(i)], decay['py_{}'.format(i)], decay['pz_{}'.format(i)]])
@@ -37,32 +43,49 @@ if __name__ == '__main__':
                 variance = np.zeros((7, 7))
                 for j in range(7):
                     for k in range(7):
-                        variance[j, k] = decay['momVertCovM_{}{}_{}'.format(j, k, i)]
+                        variance[j, k] = decay['momVertCovM{}{}_{}'.format(j, k, i)]
                 fitter.setDaughter(i, charge, momentum, position, variance)
 
             fitter.fit(3)
 
             vertex = fitter.getVertex()
-            decay['fastfit_x'] = vertex[0]
-            decay['fastfit_y'] = vertex[1]
-            decay['fastfit_z'] = vertex[2]
+            df.loc[index, 'fastfit_dx'] = vertex[0]
+            df.loc[index, 'fastfit_dy'] = vertex[1]
+            df.loc[index, 'fastfit_dz'] = vertex[2]
 
             for i in range(n):
                 momentum = fitter.getDaughterMomentum(i)
-                df['fastfit_px_{}'.format(i)] = momentum[0]
-                df['fastfit_py_{}'.format(i)] = momentum[1]
-                df['fastfit_pz_{}'.format(i)] = momentum[2]
+                df.loc[index, 'fastfit_px_{}'.format(i)] = momentum[0]
+                df.loc[index, 'fastfit_py_{}'.format(i)] = momentum[1]
+                df.loc[index, 'fastfit_pz_{}'.format(i)] = momentum[2]
 
+        r = (-0.05, 0.05)
         f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=True)
+        f.suptitle("Deviation from MC truth for fit with {} daughters".format(n))
         ax1.set_title("X")
-        (df['fastfit_dx'] - df['mcDX']).hist(bins=100, range=(-0.2, 0.2), label='FastFit', alpha=0.5, ax=ax1, c='r')
-        (df['dx'] - df['mcDX']).hist(bins=100, range=(-0.2, 0.2), label='KFit', alpha=0.5, ax=ax1, c='b')
+        df['mcDX'].hist(bins=100, range=r, label='Trivial', alpha=0.3, ax=ax1, color='g')
+        (df['fastfit_dx'] - df['mcDX']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax1, color='r')
+        (df['dx'] - df['mcDX']).hist(bins=100, range=r, label='KFit', alpha=0.3, ax=ax1, color='b')
         ax2.set_title("Y")
-        (df['fastfit_dy'] - df['mcDY']).hist(bins=100, range=(-0.2, 0.2), label='FastFit', alpha=0.5, ax=ax2, c='r')
-        (df['dy'] - df['mcDY']).hist(bins=100, range=(-0.2, 0.2), label='KFit', alpha=0.5, ax=ax2, c='b')
+        df['mcDY'].hist(bins=100, range=r, label='Trivial', alpha=0.3, ax=ax2, color='g')
+        (df['fastfit_dy'] - df['mcDY']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax2, color='r')
+        (df['dy'] - df['mcDY']).hist(bins=100, range=r, label='KFit', alpha=0.3, ax=ax2, color='b')
         ax3.set_title("Z")
-        (df['fastfit_dz'] - df['mcDZ']).hist(bins=100, range=(-0.2, 0.2), label='FastFit', alpha=0.5, ax=ax2, c='r')
-        (df['dz'] - df['mcDZ']).hist(bins=100, range=(-0.2, 0.2), label='KFit', alpha=0.5, ax=ax2, c='b')
-        #plt.savefig(f + '.png')
-        plt.show()
+        df['mcDZ'].hist(bins=100, range=r, label='Trivial', alpha=0.3, ax=ax3, color='g')
+        (df['fastfit_dz'] - df['mcDZ']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax3, color='r')
+        (df['dz'] - df['mcDZ']).hist(bins=100, range=r, label='KFit', alpha=0.3, ax=ax3, color='b')
+        plt.legend()
+        plt.savefig('MC_D{}.png'.format(n))
+        plt.clf()
+        
+        r = (-0.01, 0.01)
+        f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=True)
+        f.suptitle("Deviation from KFit for fit with {} daughters".format(n))
+        ax1.set_title("X")
+        (df['fastfit_dx'] - df['dx']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax1, color='r')
+        ax2.set_title("Y")
+        (df['fastfit_dy'] - df['dy']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax2, color='r')
+        ax3.set_title("Z")
+        (df['fastfit_dz'] - df['dz']).hist(bins=100, range=r, label='FastFit', alpha=0.3, ax=ax3, color='r')
+        plt.savefig('KF_D{}.png'.format(n))
         plt.clf()

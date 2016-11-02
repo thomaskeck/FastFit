@@ -40,6 +40,9 @@ FastFit_library.GetDaughterMomentum.restype = ctypes.c_double
 FastFit_library.GetDaughterVariance.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint]
 FastFit_library.GetDaughterVariance.restype = ctypes.c_double
 
+FastFit_library.GetVariance.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
+FastFit_library.GetVariance.restype = ctypes.c_double
+
 FastFit_library.getNDF.argtypes = [ctypes.c_void_p]
 FastFit_library.getNDF.restype = ctypes.c_uint
 
@@ -68,6 +71,9 @@ class FastFit(object):
     
     def getDaughterVariance(self, daughter):
         return np.array([[FastFit_library.GetDaughterVariance(self.fitter, int(daughter), int(i), int(j)) for i in range(6)] for j in range(6)])
+    
+    def getVariance(self):
+        return np.array([[FastFit_library.GetVariance(self.fitter, int(i), int(j)) for i in range(6)] for j in range(6)])
 
     def getChi2(self):
         return FastFit_library.getChi2(self.fitter)

@@ -19,6 +19,8 @@ extern "C" {
     double GetDaughterMomentum(void*, unsigned int i, unsigned int component);
 
     double GetDaughterVariance(void*, unsigned int i, unsigned int component_i, unsigned int component_j);
+    
+    double GetVariance(void*, unsigned int component_i, unsigned int component_j);
 
     double GetVertex(void*, unsigned int component);
 
