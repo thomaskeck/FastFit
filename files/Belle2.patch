@@ -1,0 +1,121 @@
+--- a/analysis/modules/ParticleVertexFitter/src/ParticleVertexFitterModule.cc	2016-11-02 00:03:49.961665990 +0100
++++ b/analysis/modules/ParticleVertexFitter/src/ParticleVertexFitterModule.cc	2016-11-02 13:28:12.717412880 +0100
+@@ -32,6 +32,8 @@
+ // Magnetic field
+ #include <framework/geometry/BFieldManager.h>
+ 
++#include <analysis/FastFit/FastFit.h>
++
+ #include <TMath.h>
+ 
+ using namespace std;
+@@ -61,7 +63,7 @@
+     addParam("confidenceLevel", m_confidenceLevel,
+              "required confidence level of fit to keep particles in the list. Note that even with confidenceLevel == 0.0, errors during the fit might discard Particles in the list. confidenceLevel = -1 if an error occurs during the fit",
+              0.001);
+-    addParam("vertexFitter", m_vertexFitter, "kfitter or rave", string("kfitter"));
++    addParam("vertexFitter", m_vertexFitter, "kfitter or rave or fastfit", string("kfitter"));
+     addParam("fitType", m_fitType, "type of the kinematic fit (vertex, massvertex, mass)", string("vertex"));
+     addParam("withConstraint", m_withConstraint, "additional constraint on vertex: ipprofile, iptube, mother, iptubecut", string(""));
+     addParam("decayString", m_decayString, "specifies which daughter particles are included in the kinematic fit", string(""));
+@@ -100,6 +102,49 @@
+     //m_Bfield = BFieldMap::Instance().getBField(TVector3(0,0,0)).Z();
+     //TODO: set IP spot size for each run
+   }
++  
++  void fillEnergyCovariance(Particle *particle)
++  {
++    auto momentum = particle->get4Vector();
++    auto variance = particle->getMomentumVertexErrorMatrix();
++
++    float E = static_cast<float>(momentum.E());
++    float dEdp[] = {static_cast<float>(momentum.Px()) / E, static_cast<float>(momentum.Py()) / E, static_cast<float>(momentum.Pz()) / E};
++    unsigned c_E = 3;
++    unsigned compMom[] = {0, 1, 2};
++    unsigned compPos[] = {4, 5, 6};
++
++    // covariances (p,E)
++    for (int i = 0; i < 3; i++) {
++      float Cov = 0;
++      for (int k = 0; k < 3; k++) {
++        Cov += variance(compMom[i], compMom[k]) * dEdp[k];
++      }
++      variance(compMom[i], c_E) = Cov;
++    }
++
++    // covariances (x,E)
++    for (int i = 0; i < 3; i++) {
++      float Cov = 0;
++      for (int k = 0; k < 3; k++) {
++        Cov += variance(compPos[i], compMom[k]) * dEdp[k];
++      }
++      variance(c_E, compPos[i]) = Cov;
++    }
++
++    // variance (E,E)
++    float Cov = 0;
++    for (int i = 0; i < 3; i++) {
++      Cov += variance(compMom[i], compMom[i]) * dEdp[i] * dEdp[i];
++    }
++    for (int i = 0; i < 3; i++) {
++      int k = (i + 1) % 3;
++      Cov += 2 * variance(compMom[i], compMom[k]) * dEdp[i] * dEdp[k];
++    }
++    variance(c_E, c_E) = Cov;
++
++    particle->setMomentumVertexErrorMatrix(variance);
++  }
+ 
+   void ParticleVertexFitterModule::event()
+   {
+@@ -229,8 +274,49 @@
+       }
+     }
+ 
++    if (m_vertexFitter == "fastfit") {
++      if (m_decayString != "")
++        B2FATAL("ParticleVertexFitter: fastfit does not support yet selection of daughters via decay string!");
++      if (m_withConstraint == "iptube" || m_withConstraint == "iptubecut")
++        B2FATAL("ParticleVertexFitter: fastfit does not support yet the iptube constraint ");
++      if (m_fitType == "massvertex" || m_fitType == "mass")
++        B2FATAL("ParticleVertexFitter: fastfit does not support yet mass constrained vertex fits");
++
++      // vertex fit
++      if (m_fitType == "vertex") {
++        ok = doFastVertexFit(mother);
++        auto daughters = mother->getDaughters();
++        numberOfDaughters = daughters.size();
++        
++        FastFit fitter(numberOfDaughters, m_Bfield);
++
++        for (unsigned int i = 0; i < numberOfDaughters; ++i) {
++          fitter.Belle2SetDaughter(daughter[i]);
++        }
++
++        bool ok = fitter.fit(3);
++        if (not ok)
++          return false;
++        
++        fitter.Belle2UpdateMother(mother);
++        fillEnergyCovariance(mother);
++        
++        const double prob = TMath::Prob(fitter.getChi2(), fitter.getNDF());
++        mother->setPValue(prob);
++
++        if(m_decayString.empty() && m_updateDaughters == true) {
++            for (unsigned int i = 0; i < numberOfDaughters; ++i) {
++              fitter.Belle2UpdateDaughter(daughters[i]);
++              fillEnergyCovariance(daughters[i]);
++            }
++        }
++      } else {
++        B2FATAL("ParticleVertexFitter: " << m_fitType << " ***invalid fit type for the fastfit ");
++      }
++    }
++
+     // invalid fitter
+-    if (m_vertexFitter != "kfitter" && m_vertexFitter != "rave")
++    if (m_vertexFitter != "kfitter" && m_vertexFitter != "rave" && m_vertexFitter != "fastfit")
+       B2FATAL("ParticleVertexFitter: " << m_vertexFitter << " ***invalid vertex fitter ");
+ 
+     if (!ok) return false;

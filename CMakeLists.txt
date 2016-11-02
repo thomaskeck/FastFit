@@ -9,8 +9,9 @@ set (FastFit_VERSION_MINOR 0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -std=c++11 -Wall -Wextra -g -msse2")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ggdb3 -g -std=c++11 -Wall -Wextra")
+#set(CMAKE_INSTALL_PREFIX "/local/ssd-scratch/tkeck/prefix/")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -std=c++11 -Wall -g -msse2")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ggdb3 -g -std=c++11 -Wall -Wextra")
 
 configure_file (
   "${PROJECT_SOURCE_DIR}/include/FastFit.h.in"
@@ -56,6 +57,16 @@ install(TARGETS FastFit_static FastFit_shared FastFit_CInterface
       ARCHIVE DESTINATION lib
       RUNTIME DESTINATION bin   
    )
+
+if(DEFINED ENV{BELLE2_LOCAL_DIR})
+  execute_process(COMMAND patch -p1 -d $ENV{BELLE2_LOCAL_DIR} -i ${PROJECT_SOURCE_DIR}/files/Belle2.patch --dry-run RESULT_VARIABLE canpatch)
+  if(${canpatch} STREQUAL 0)
+    install(CODE "execute_process(COMMAND patch -p1 -d $ENV{BELLE2_LOCAL_DIR} -i ${PROJECT_SOURCE_DIR}/files/Belle2.patch)")
+    message(STATUS "Patching basf2 particle vertex fitter will work -> applying patch when installing.")
+  else()
+    message(STATUS "Cannot patch basf2 particle vertex fitter -> won't do it.")
+  endif()
+endif()
 
 if(GTEST_FOUND)
   add_executable(unittests ${FastFit_TESTS} ${FastFit_HEADERS})
