@@ -43,7 +43,7 @@ if __name__ == '__main__':
                 charge = int(decay['charge_{}'.format(i)])
                 momentum = np.array([decay['px_{}'.format(i)], decay['py_{}'.format(i)], decay['pz_{}'.format(i)]])
                 position = np.array([decay['dx_{}'.format(i)], decay['dy_{}'.format(i)], decay['dz_{}'.format(i)]])
-                variance = np.zeros((7, 7))
+                variance = np.zeros((6, 6))
 
                 m = [4, 5, 6, 0, 1, 2]
                 for j in range(6):
