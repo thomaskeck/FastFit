@@ -154,14 +154,18 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
       G_inv = J * V * J.transpose();
 
       if (invertAndCheck(G_inv, G) == false) {
+#ifdef DEBUG
         std::cout << "Affected Matrix was G" << std::endl;
+#endif
         return false;
       }
 
       S_inv = B.transpose() * G * B;
 
       if (invertAndCheck(S_inv, S) == false) {
+#ifdef DEBUG
         std::cout << "Affected Matrix was S" << std::endl;
+#endif
         return false;
       }
 
@@ -172,7 +176,9 @@ bool FastFit::fit(unsigned int maximumNumberOfFitIterations)
     }
 
     if (invertAndCheck(m_C_inv, m_C) == false) {
+#ifdef DEBUG
       std::cout << "Affected Matrix was m_C" << std::endl;
+#endif
       return false;
     }
 

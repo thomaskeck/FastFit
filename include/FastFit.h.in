@@ -11,6 +11,10 @@
 #define FastFit_VERSION_MAJOR @FastFit_VERSION_MAJOR@
 #define FastFit_VERSION_MINOR @FastFit_VERSION_MINOR@
 
+#ifdef DEBUG
+#undef DEBUG
+#endif
+// #define DEBUG
 
 class Helix {
   enum Coordinates {
@@ -134,8 +138,10 @@ class FastFit {
                          variance[Z][X], variance[Z][Y], variance[Z][Z];
 
         if (invertAndCheck(m_ip_variance, m_ip_variance_inv) == false) {
+#ifdef DEBUG
           std::cout << "Affected Matrix was m_ip_variance_inv" << std::endl;
           std::cout << "Setting the IP Profile failed! I reset the constraint to 0." << std::endl;
+#endif
           m_use_ip_constraint = false;
           m_ip_vertex = Eigen::Matrix<double, 3, 1>::Zero();
           m_ip_variance << 1000.0,   0.0,   0.0,
@@ -353,7 +359,9 @@ class FastFit {
       const double epsilon = 1e-2;
 
       if (not(input * output).isIdentity(epsilon)) {
+#ifdef DEBUG
         std::cerr << "Inversion of a matrix in FastFit failed." << std::endl;
+#endif
         return false;
       }
       return true;
