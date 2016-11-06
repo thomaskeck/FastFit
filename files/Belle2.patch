@@ -76,12 +76,13 @@
            ok = doKVertexFit(mother, false, false);
          }
        }
-@@ -229,8 +274,49 @@
+@@ -229,8 +274,81 @@ namespace Belle2 {
        }
      }
  
 +    if (m_vertexFitter == "fastfit") {
 +FastFitter:
++
 +      if (m_decayString != "")
 +        B2FATAL("ParticleVertexFitter: fastfit does not support yet selection of daughters via decay string!");
 +      if (m_withConstraint == "iptube" || m_withConstraint == "iptubecut")
@@ -124,7 +125,7 @@
 +          if (!ok)
 +            return false;
 +        }
-+        
++
 +        FastFit fitter(numberOfDaughters, m_Bfield);
 +
 +        for (unsigned int i = 0; i < numberOfDaughters; ++i) {
@@ -134,10 +135,10 @@
 +        ok = fitter.fit(3);
 +        if (not ok)
 +          return false;
-+        
++
 +        fitter.Belle2UpdateMother(mother);
 +        fillEnergyCovariance(mother);
-+        
++
 +        const double prob = TMath::Prob(fitter.getChi2(), fitter.getNDF());
 +        mother->setPValue(prob);
 +
@@ -158,8 +159,7 @@
        B2FATAL("ParticleVertexFitter: " << m_vertexFitter << " ***invalid vertex fitter ");
  
      if (!ok) return false;
-diff --git a/analysis/modules/ParticleVertexFitter/SConscript b/analysis/modules/ParticleVertexFitter/SConscript
-index 0f1f9e0..d666de9 100644
+
 --- a/analysis/modules/ParticleVertexFitter/SConscript
 +++ b/analysis/modules/ParticleVertexFitter/SConscript
 @@ -1,7 +1,7 @@
