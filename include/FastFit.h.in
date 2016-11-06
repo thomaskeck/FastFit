@@ -238,14 +238,14 @@ class FastFit {
         decltype(particle->get4Vector()) momentum;
         momentum.SetPx(0.0);
         momentum.SetPy(0.0);
-        momentum.SetPy(0.0);
+        momentum.SetPz(0.0);
         momentum.SetE(0.0);
         for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
           decltype(particle->get4Vector()) child_momentum;
 
           child_momentum.SetPx(m_smoothed_momenta[i](X));
           child_momentum.SetPy(m_smoothed_momenta[i](Y));
-          child_momentum.SetPy(m_smoothed_momenta[i](Z));
+          child_momentum.SetPz(m_smoothed_momenta[i](Z));
           child_momentum.SetE(particle->getDaughter(i)->getEnergy());
 
           momentum += child_momentum;
@@ -291,7 +291,7 @@ class FastFit {
         auto momentum = particle->get4Vector();
         momentum.SetPx(m_smoothed_momenta[i](X));
         momentum.SetPy(m_smoothed_momenta[i](Y));
-        momentum.SetPy(m_smoothed_momenta[i](Z));
+        momentum.SetPz(m_smoothed_momenta[i](Z));
         momentum.SetE(particle->getDaughter(i)->getEnergy());
 
         auto error = particle->getMomentumVertexErrorMatrix();
