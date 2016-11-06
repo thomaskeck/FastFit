@@ -93,6 +93,37 @@
 +      if (m_fitType == "vertex") {
 +        auto daughters = mother->getDaughters();
 +        unsigned int numberOfDaughters = daughters.size();
++
++        if (numberOfDaughters < 2) return false;
++
++        std::vector<unsigned> fitChildren;
++        std::vector<unsigned> pi0Children;
++
++        bool validChildren = fillFitParticles(mother, fitChildren, pi0Children);
++
++        if (!validChildren)
++          return false;
++
++        if (pi0Children.size() > 1) {
++          B2FATAL("Vertex fit using FastFit does not support fit with multiple pi0s (yet).");
++        }
++
++        if (fitChildren.size() < 2) {
++          B2WARNING("Number of particles with valid error matrix entering the vertex fit using FastFit is less than 2.");
++          return false;
++        }
++
++        // Use KFT to perform MassFit for pi0
++        if (pi0Children.size() == 1) {
++          analysis::VertexFitKFit kv;
++          kv.setMagneticField(m_Bfield);
++
++          const Particle* pi0 = mother->getDaughter(pi0Children[0]);
++          Particle pi0Temp(pi0->get4Vector(), 111);
++          ok = redoPi0MassFit(&pi0Temp, pi0, kv) ;
++          if (!ok)
++            return false;
++        }
 +        
 +        FastFit fitter(numberOfDaughters, m_Bfield);
 +
