@@ -235,7 +235,11 @@ class FastFit {
         vertex.SetY(this->GetVertex(Y));
         vertex.SetZ(this->GetVertex(Z));
 
-        auto momentum = particle->get4Vector();
+        decltype(particle->get4Vector()) momentum;
+        momentum.SetPx(0.0);
+        momentum.SetPy(0.0);
+        momentum.SetPy(0.0);
+        momentum.SetE(0.0);
         for (unsigned int i = 0; i < m_numberOfDaughters; ++i) {
           decltype(particle->get4Vector()) child_momentum;
 
@@ -248,6 +252,11 @@ class FastFit {
         }
 
         auto error = particle->getMomentumVertexErrorMatrix();
+        for(unsigned int i = 0; i < 7; ++i) {
+          for(unsigned int j = 0; i < 7; ++i) {
+            error(i, j) = 0.0;
+          }
+        }
         std::vector<unsigned int> map = {4, 5, 6, 0, 1, 2};
         for(unsigned int i = 0; i < 6; ++i) {
           for(unsigned int j = 0; i < 6; ++i) {
@@ -286,6 +295,11 @@ class FastFit {
         momentum.SetE(particle->getDaughter(i)->getEnergy());
 
         auto error = particle->getMomentumVertexErrorMatrix();
+        for(unsigned int i = 0; i < 7; ++i) {
+          for(unsigned int j = 0; i < 7; ++i) {
+            error(i, j) = 0.0;
+          }
+        }
         std::vector<unsigned int> map = {4, 5, 6, 0, 1, 2};
         for(unsigned int j = 0; j < 6; ++j) {
           for(unsigned int k = 0; k < 6; ++k) {
