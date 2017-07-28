@@ -5,12 +5,11 @@ set(CMAKE_CXX_COMPILER g++)
 
 project (FastFit)
 set (FastFit_VERSION_MAJOR 1)
-set (FastFit_VERSION_MINOR 0)
+set (FastFit_VERSION_MINOR 1)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -std=c++11 -Wall -g -msse2")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ggdb3 -g -std=c++11 -Wall -Wextra")
 
 configure_file (
   "${PROJECT_SOURCE_DIR}/include/FastFit.h.in"
@@ -45,6 +44,11 @@ set(FastFit_HEADERS
 set(FastFit_CINTERFACE
     "${PROJECT_SOURCE_DIR}/src/FastFit_C_API.cc"
     "${PROJECT_SOURCE_DIR}/include/FastFit_C_API.h" 
+)
+
+set(FastFit_Python
+  "${PROJECT_BINARY_DIR}/PyFastFit/__init__.py"
+  "${PROJECT_BINARY_DIR}/PyFastFit/FastFit.py"
 )
 
 add_library(FastFit_static STATIC ${FastFit_SOURCES} ${FastFit_HEADERS})
@@ -91,14 +95,17 @@ if (PYTHON)
         "${PROJECT_SOURCE_DIR}/setup.py"
     )
 
-    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp"
-                       COMMAND ${PYTHON} "${CMAKE_CURRENT_BINARY_DIR}/setup.py" build
-                       COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp"
-                       DEPENDS ${DEPS})
+    add_custom_target(PyFastFit ALL DEPENDS ${FastFit_Python} FastFit_shared FastFit_CInterface)
 
-    add_custom_target(target ALL DEPENDS ${OUTPUT})
+    add_custom_command(TARGET PyFastFit PRE_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/PyFastFit" "${CMAKE_BINARY_DIR}/PyFastFit"
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FastFit_shared> "${PROJECT_BINARY_DIR}/PyFastFit/"
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:FastFit_CInterface> "${PROJECT_BINARY_DIR}/PyFastFit/"
+                       COMMAND ${PYTHON} "${CMAKE_BINARY_DIR}/setup.py" build
+    )
 
-    install(CODE "execute_process(COMMAND ${PYTHON} ${PROJECT_SOURCE_DIR}/setup.py install --prefix=${CMAKE_INSTALL_PREFIX})")
+    install(CODE "execute_process(COMMAND ${PYTHON} ${PROJECT_BINARY_DIR}/setup.py install --prefix=${CMAKE_INSTALL_PREFIX})")
+
 endif()
 
 set(CPACK_PACKAGE_VERSION "${FastFit_VERSION_MAJOR}.${FastFit_VERSION_MINOR}")
