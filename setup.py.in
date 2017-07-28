@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='PyFastFit',
-      version='${PACKAGE_VERSION}',
-      package_dir={ '': '${CMAKE_CURRENT_SOURCE_DIR}' },
+      version='${FastFit_VERSION_MAJOR}.${FastFit_VERSION_MINOR}',
+      package_data={'PyFastFit': ['*.so']},
       packages=['PyFastFit'])
 
