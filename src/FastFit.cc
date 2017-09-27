@@ -14,7 +14,7 @@ Helix::Helix(const double alpha, const Eigen::Matrix<double, 3, 1> &x, const Eig
   // because tracks with a transverse momentum of 0 shouldn't be in
   // the detector acceptance!
   if (T <= 0) {
-    std::cerr << "Invalid inverse transverse momentum. This should happen." << std::endl;
+    std::cerr << "Invalid inverse transverse momentum. This should not happen." << std::endl;
     return;
   }
 
